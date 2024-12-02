@@ -74,8 +74,11 @@ class main_game:
             "HP" : load_trans_image("HP.png"),
             "Boss_full" : load_trans_image("max_HP_bar.png"),
             "Boss_empty" : load_trans_image("empty_HP_bar.png"),
+            "energy_max" : load_trans_image("max_SP_bar.png"),
+            "energy_empty" : load_trans_image("empty_SP_bar.png"),
             "retry" : load_image("buttons/retry_1.png"),  
             "pressed_retry" : load_image("buttons/retry_2.png"),
+            "enemy_portrait_1" : load_trans_image("紅美鈴_大招立繪.png"),
 
         }
 
@@ -116,6 +119,8 @@ class main_game:
         self.screen_shake_timer = 0
         self.screen_shake_offset = [0,0]
         self.dead = 0 #dead animation
+        self.in_cutscene = 0
+        self.cutscene_timer = 0
 
         self.tilemap.load("game_testing/"+str(self.level)+".pickle")
 
@@ -166,16 +171,18 @@ class main_game:
                             self.pause_select = max(0,self.pause_select-1)
                             self.pause_select_cd = 1
                         if event.key == pygame.K_DOWN and self.pause_select_cd == 0:
-                            self.pause_select = min(1,self.pause_select+1)
+                            self.pause_select = min(2,self.pause_select+1)
                             self.pause_select_cd = 1
                         if event.key == pygame.K_SPACE:
                             if self.pause_select == 0:
                                 self.pause = False
                                 pygame.mixer.music.set_volume(0.2)
-                            else:
+                            elif self.pause_select == 1:
                                 self.pause = False
                                 pygame.mixer.music.set_volume(0.2)
                                 self.dead = 10
+                            elif self.pause_select == 2:
+                                return
                     if event.type == pygame.JOYBUTTONDOWN:
                         if event.button == 11:
                             self.pause = False
@@ -184,17 +191,19 @@ class main_game:
                             if self.pause_select == 0:
                                 self.pause = False
                                 pygame.mixer.music.set_volume(0.2)  
-                            else:
+                            elif self.pause_select == 1:
                                 self.pause = False
                                 self.dead = 10
                                 pygame.mixer.music.set_volume(0.2)
+                            elif self.pause_select == 2:
+                                return
                     if event.type == pygame.JOYAXISMOTION:
                         if event.axis == 1:
                             if event.value < -0.5 and self.pause_select_cd == 0:
                                 self.pause_select = max(0,self.pause_select-1)
                                 self.pause_select_cd = 1
                             elif event.value > 0.5 and self.pause_select_cd == 0:
-                                self.pause_select = min(1,self.pause_select+1)
+                                self.pause_select = min(2,self.pause_select+1)
                                 self.pause_select_cd = 1
                 
                 #make self.display_pause a transparent screen
@@ -202,11 +211,13 @@ class main_game:
                 self.display_pause.fill((0, 0, 0, 0))   
                 self.display_pause.blit(self.assets['retry'], (SCREEN_Width//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16-18 - self.assets['retry'].get_height()//2))
                 self.display_pause.blit(self.assets['retry'], (SCREEN_Width//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16 - self.assets['retry'].get_height()//2))
+                self.display_pause.blit(self.assets['retry'], (SCREEN_Width//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16+18 - self.assets['retry'].get_height()//2))
                 if self.pause_select == 0:
                     self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_Width//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16-18 - self.assets['pressed_retry'].get_height()//2))
-                else:
+                elif self.pause_select == 1:
                     self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_Width//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16 - self.assets['pressed_retry'].get_height()//2))
-
+                elif self.pause_select == 2:
+                    self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_Width//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16+18 - self.assets['pressed_retry'].get_height()//2))
 
                 self.screen.blit(pygame.transform.scale(self.display_pause, (8*SCREEN_Width, 8*SCREEN_HEIGHT)), self.screen_shake_offset) 
                 pygame.display.update()
@@ -240,219 +251,221 @@ class main_game:
             #self.camera[1] += (self.player.rect().centery - self.display.get_height()/2 - self.camera[1])/20 #camera follow player y
             self.render_camera = [int(self.camera[0]), int(self.camera[1])]
 
-            for spawner in self.leaf_spawners:
-                if random.random() * 49999 < spawner.width* spawner.height:
-                    pos = (spawner.x + random.random()*spawner.width, spawner.y + random.random()*spawner.height)
-                    self.particles.append(Particle(self,'leaf',pos,velocity=[-0.1,0.3],frame=random.randint(0,20)))
-            self.tilemap.render(self.display,offset=self.render_camera) #render background
+            if self.in_cutscene == 0:
+                for spawner in self.leaf_spawners:
+                    if random.random() * 49999 < spawner.width* spawner.height:
+                        pos = (spawner.x + random.random()*spawner.width, spawner.y + random.random()*spawner.height)
+                        self.particles.append(Particle(self,'leaf',pos,velocity=[-0.1,0.3],frame=random.randint(0,20)))
+                self.tilemap.render(self.display,offset=self.render_camera) #render background
 
-            for enemy in self.enemy_spawners.copy():
-                kill = enemy.update((0,0),self.tilemap)
-                enemy.render(self.display,offset=self.render_camera)
-                if kill:
-                    self.projectiles=[] 
-                    self.special_projectiles=[]
-                    phase = enemy.phase
-                    self.enemy_spawners.remove(enemy)
-                    for i in range(4):
-                        self.sparks.append(Flame((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 3+random.random()))
-                        self.sparks.append(Flexible_Spark((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 3+random.random(),(255,127,0)))
-                        self.sparks.append(Gold_Flame((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 2+random.random()))
-                        self.sparks.append(Flexible_Spark((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 1+random.random(),(0,255,0)))
-                        self.sparks.append(Ice_Flame((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 5+random.random()))
-                        self.sparks.append(Flexible_Spark((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 4+random.random(),(148,0,211)))
-                    if phase == 1:
-                        self.enemy_spawners.append(Enemy(self,[287,145],(8,15),phase=2,action_queue=[100,"jump()",40,"frozen_in_air()",10,"air_8_shoot(1)",30,"air_8_shoot(2)",30,"air_8_shoot(1)",30,"prepare_attack()",["attack_preview()",30],5,["dash_to()",1]]))
-                    elif phase == 2:
-                        self.enemy_spawners.append(Enemy(self,[287,90],(8,15),phase=3,action_queue=[60,"prepare_attack(1)",60,["spell_card()",80],90,"air_dash()",40,"frozen_in_air()",10,["spell_card()",80],90,["spread()",15],90,"prepare_attack()",["attack_preview()",30],5,["dash_to()",1]]))
-                    elif phase == 3:
-                        self.first_phase_cutscene()
-                        self.win = 1
-            if not self.dead:
-                self.player.update((self.movements[1] - self.movements[0],0),self.tilemap) #update player
-                #self.player.render(self.display,offset=self.render_camera) #render player
-                
+                for enemy in self.enemy_spawners.copy():
+                    kill = enemy.update((0,0),self.tilemap)
+                    enemy.render(self.display,offset=self.render_camera)
+                    if kill:
+                        self.projectiles=[] 
+                        self.special_projectiles=[]
+                        phase = enemy.phase
+                        self.enemy_spawners.remove(enemy)
+                        for i in range(4):
+                            self.sparks.append(Flame((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 3+random.random()))
+                            self.sparks.append(Flexible_Spark((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 3+random.random(),(255,127,0)))
+                            self.sparks.append(Gold_Flame((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 2+random.random()))
+                            self.sparks.append(Flexible_Spark((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 1+random.random(),(0,255,0)))
+                            self.sparks.append(Ice_Flame((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 5+random.random()))
+                            self.sparks.append(Flexible_Spark((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 4+random.random(),(148,0,211)))
+                        if phase == 1:
+                            self.enemy_spawners.append(Enemy(self,[287,145],(8,15),phase=2,action_queue=[100,"jump()",40,"frozen_in_air()",10,"air_8_shoot(1)",30,"air_8_shoot(2)",30,"air_8_shoot(1)",30,"prepare_attack()",["attack_preview()",30],5,["dash_to()",1]]))
+                        elif phase == 2:
+                            self.enemy_spawners.append(Enemy(self,[287,90],(8,15),phase=3,action_queue=[60,"cut_in()",120,"prepare_attack(1)",60,["spell_card()",80],90,"air_dash()",40,"frozen_in_air()",10,["spell_card()",80],90,["spread()",15],90,"prepare_attack()",["attack_preview()",30],5,["dash_to()",1]]))                
+                        elif phase == 3:
+                            self.first_phase_cutscene()
+                            self.win = 1
+                if not self.dead:
+                    self.player.update((self.movements[1] - self.movements[0],0),self.tilemap) #update player
+                    #self.player.render(self.display,offset=self.render_camera) #render player
 
-
-            self.max_jump_height = -3  # Maximum jump velocity
-            self.min_jump_height = -1   # Minimum jump velocity
-            self.jump_start_time = None
-
-            #[[x,y],direction,timer]
-            for projectile in self.projectiles.copy():
-                projectile[0][0] += projectile[1]
-                projectile[2] += 1
-                img = self.assets['projectile']
-                self.display.blit(img,(projectile[0][0]-img.get_width()/2 -self.render_camera[0],projectile[0][1]-img.get_height()/2-self.render_camera[1]))
-                if self.tilemap.solid_check(projectile[0]):
-                    try:
-                        self.projectiles.remove(projectile) 
-                    except:
-                        pass
-                    for i in range(4):
-                        self.sparks.append(Spark(projectile[0],random.random()*math.pi*2,2+random.random()))
-                elif projectile[2] > 360:
-                    try:
-                        self.projectiles.remove(projectile)
-                    except:
-                        pass
-                elif abs(self.player.dashing) < 50:
-                    if self.player.rect().collidepoint(projectile[0]):
+                #[[x,y],direction,timer]
+                for projectile in self.projectiles.copy():
+                    projectile[0][0] += projectile[1]
+                    projectile[2] += 1
+                    img = self.assets['projectile']
+                    self.display.blit(img,(projectile[0][0]-img.get_width()/2 -self.render_camera[0],projectile[0][1]-img.get_height()/2-self.render_camera[1]))
+                    if self.tilemap.solid_check(projectile[0]):
+                        try:
+                            self.projectiles.remove(projectile) 
+                        except:
+                            pass
+                        for i in range(4):
+                            self.sparks.append(Spark(projectile[0],random.random()*math.pi*2,2+random.random()))
+                    elif projectile[2] > 360:
                         try:
                             self.projectiles.remove(projectile)
                         except:
                             pass
-                        self.player.take_damage(1,(list(self.player.rect().center).copy()[0]-projectile[0][0],0))
-            for special_projectile in self.special_projectiles.copy():
-                special_projectile.update()
-                img = self.assets[special_projectile.img_name]
-                #rotate image according to its direction which is a vector
-                angle = math.atan2(special_projectile.direction[1],special_projectile.direction[0]) * 180 / math.pi
-                #img = pygame.transform.rotate(img,-1*angle)
-                self.display.blit(img,(special_projectile.pos[0]-img.get_width()/2 -self.render_camera[0],special_projectile.pos[1]-img.get_height()/2-self.render_camera[1]))
-                if self.tilemap.solid_check(special_projectile.pos):
-                    try:
-                        self.special_projectiles.remove(special_projectile)
-                    except:
-                        pass
-                    for i in range(4):
-                        #match the spark's color with the projectile
-                        if special_projectile.img_name == 'projectile_1':
-                            self.sparks.append(Flame(special_projectile.pos,random.random()*math.pi*2,2+random.random()))
-                        elif special_projectile.img_name == 'projectile_2':
-                            self.sparks.append(Flexible_Spark(special_projectile.pos,random.random()*math.pi*2,2+random.random(),(255,127,0)))
-                        elif special_projectile.img_name == 'projectile_3':
-                            self.sparks.append(Gold_Flame(special_projectile.pos,random.random()*math.pi*2,2+random.random()))
-                        elif special_projectile.img_name == 'projectile_4':
-                            self.sparks.append(Flexible_Spark(special_projectile.pos,random.random()*math.pi*2,2+random.random(),(0,255,0)))
-                        elif special_projectile.img_name == 'projectile_5':
-                            self.sparks.append(Ice_Flame(special_projectile.pos,random.random()*math.pi*2,2+random.random()))
-                        elif special_projectile.img_name == 'projectile_6':
-                            self.sparks.append(Flexible_Spark(special_projectile.pos,random.random()*math.pi*2,2+random.random(),(148,0,211)))
-                        elif special_projectile.img_name == 'projectile_7':
-                            self.sparks.append(Flexible_Spark(special_projectile.pos,random.random()*math.pi*2,2+random.random(),(255,0,255)))
-                        else:
-                            self.sparks.append(Spark(special_projectile.pos,random.random()*math.pi*2,2+random.random()))   
-                elif special_projectile.timer > 360:
-                    try:
-                        self.special_projectiles.remove(special_projectile) 
-                    except:
-                        pass    
-                elif abs(self.player.dashing) < 50: 
-                    if self.player.rect().collidepoint(special_projectile.pos):
+                    elif abs(self.player.dashing) < 50:
+                        if self.player.rect().collidepoint(projectile[0]):
+                            try:
+                                self.projectiles.remove(projectile)
+                            except:
+                                pass
+                            self.player.take_damage(1,(list(self.player.rect().center).copy()[0]-projectile[0][0],0))
+                for special_projectile in self.special_projectiles.copy():
+                    special_projectile.update()
+                    img = self.assets[special_projectile.img_name]
+                    #rotate image according to its direction which is a vector
+                    angle = math.atan2(special_projectile.direction[1],special_projectile.direction[0]) * 180 / math.pi
+                    #img = pygame.transform.rotate(img,-1*angle)
+                    self.display.blit(img,(special_projectile.pos[0]-img.get_width()/2 -self.render_camera[0],special_projectile.pos[1]-img.get_height()/2-self.render_camera[1]))
+                    if self.tilemap.solid_check(special_projectile.pos):
                         try:
                             self.special_projectiles.remove(special_projectile)
                         except:
                             pass
-                        self.player.take_damage(1,(list(self.player.rect().center).copy()[0]-special_projectile.pos[0],0))
+                        for i in range(4):
+                            #match the spark's color with the projectile
+                            if special_projectile.img_name == 'projectile_1':
+                                self.sparks.append(Flame(special_projectile.pos,random.random()*math.pi*2,2+random.random()))
+                            elif special_projectile.img_name == 'projectile_2':
+                                self.sparks.append(Flexible_Spark(special_projectile.pos,random.random()*math.pi*2,2+random.random(),(255,127,0)))
+                            elif special_projectile.img_name == 'projectile_3':
+                                self.sparks.append(Gold_Flame(special_projectile.pos,random.random()*math.pi*2,2+random.random()))
+                            elif special_projectile.img_name == 'projectile_4':
+                                self.sparks.append(Flexible_Spark(special_projectile.pos,random.random()*math.pi*2,2+random.random(),(0,255,0)))
+                            elif special_projectile.img_name == 'projectile_5':
+                                self.sparks.append(Ice_Flame(special_projectile.pos,random.random()*math.pi*2,2+random.random()))
+                            elif special_projectile.img_name == 'projectile_6':
+                                self.sparks.append(Flexible_Spark(special_projectile.pos,random.random()*math.pi*2,2+random.random(),(148,0,211)))
+                            elif special_projectile.img_name == 'projectile_7':
+                                self.sparks.append(Flexible_Spark(special_projectile.pos,random.random()*math.pi*2,2+random.random(),(255,0,255)))
+                            else:
+                                self.sparks.append(Spark(special_projectile.pos,random.random()*math.pi*2,2+random.random()))   
+                    elif special_projectile.timer > 360:
+                        try:
+                            self.special_projectiles.remove(special_projectile) 
+                        except:
+                            pass    
+                    elif abs(self.player.dashing) < 50: 
+                        if self.player.rect().collidepoint(special_projectile.pos):
+                            try:
+                                self.special_projectiles.remove(special_projectile)
+                            except:
+                                pass
+                            self.player.take_damage(1,(list(self.player.rect().center).copy()[0]-special_projectile.pos[0],0))
 
-            for spark in self.sparks.copy():
-                kill = spark.update()
-                spark.render(self.display,offset=self.render_camera)
-                if kill:
-                    self.sparks.remove(spark)   
+                for spark in self.sparks.copy():
+                    kill = spark.update()
+                    spark.render(self.display,offset=self.render_camera)
+                    if kill:
+                        self.sparks.remove(spark)   
 
-            display_mask = pygame.mask.from_surface(self.display)
-            display_sillouette = display_mask.to_surface(setcolor=(0,0,0,180),unsetcolor=(0,0,0,0))
-            #outline stuff but I dont like it
-            #for offset in [[-1,0],[1,0],[0,1],[0,-1]]:
-            #    self.display_for_outline.blit(display_sillouette,offset)
+                display_mask = pygame.mask.from_surface(self.display)
+                display_sillouette = display_mask.to_surface(setcolor=(0,0,0,180),unsetcolor=(0,0,0,0))
+                #outline stuff but I dont like it
+                #for offset in [[-1,0],[1,0],[0,1],[0,-1]]:
+                #    self.display_for_outline.blit(display_sillouette,offset)
 
-            for particle in self.particles.copy():
-                kill = particle.update()
-                if particle.p_type == 'leaf':
-                    particle.pos[0] += math.sin(particle.animation.frame*0.035)*0.3
-                particle.render(self.display,offset=self.render_camera)
-                if kill:
-                    self.particles.remove(particle)
+                for particle in self.particles.copy():
+                    kill = particle.update()
+                    if particle.p_type == 'leaf':
+                        particle.pos[0] += math.sin(particle.animation.frame*0.035)*0.3
+                    particle.render(self.display,offset=self.render_camera)
+                    if kill:
+                        self.particles.remove(particle)
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        self.movements[0] = True
-                    if event.key == pygame.K_RIGHT:
-                        self.movements[1] = True
-                    if event.key == pygame.K_UP:
-                        self.player.jump()
-                    if event.key == pygame.K_SPACE:
-                        self.player.dash()
-                    if event.key == pygame.K_z: 
-                        self.player.attack()
-                    if event.key == pygame.K_p:
-                        self.pause = True
-                        self.movements = [False,False]  
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_LEFT:
-                        self.movements[0] = False
-                    if event.key == pygame.K_RIGHT:
-                        self.movements[1] = False
-
-                #joystick control
-                if event.type == pygame.JOYAXISMOTION:
-                    if event.axis == 0:
-                        if event.value < -0.3:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_LEFT:
                             self.movements[0] = True
-                            self.movements[1] = False
-                        elif event.value > 0.3:
+                        if event.key == pygame.K_RIGHT:
                             self.movements[1] = True
+                        if event.key == pygame.K_UP:
+                            self.player.jump()
+                        if event.key == pygame.K_SPACE:
+                            self.player.dash()
+                        if event.key == pygame.K_z: 
+                            self.player.attack()
+                        if event.key == pygame.K_p:
+                            self.pause = True
+                            self.movements = [False,False]  
+                    if event.type == pygame.KEYUP:
+                        if event.key == pygame.K_LEFT:
                             self.movements[0] = False
-                        else:
-                            self.movements[0] = False
+                        if event.key == pygame.K_RIGHT:
                             self.movements[1] = False
 
-                if event.type == pygame.JOYBUTTONDOWN:
-                    if event.button == 0:
-                        if not self.player.jump():
-                            self.buffer=["jump",6]
-                    if event.button == 7:
-                        if not self.player.dash():
-                            self.buffer=["dash",6]
-                    if event.button == 3:
-                        if not self.player.attack():
-                            self.buffer=["attack",6]
-                    if event.button == 4:
-                        self.player.charge_attack()
-                    if event.button == 11:
-                        self.pause = True
-                        self.movements = [False,False]  
-                if event.type == pygame.JOYBUTTONUP:
-                    if event.button == 0 and "jump" in self.buffer:
-                        self.buffer=[]
-                        pass
-                    if event.button == 7 and "dash" in self.buffer:
-                        self.buffer=[]
-                        pass
-                    if event.button == 3 and "attack" in self.buffer:
-                        self.buffer=[]
-                        pass
+                    #joystick control
+                    if event.type == pygame.JOYAXISMOTION:
+                        if event.axis == 0:
+                            if event.value < -0.3:
+                                self.movements[0] = True
+                                self.movements[1] = False
+                            elif event.value > 0.3:
+                                self.movements[1] = True
+                                self.movements[0] = False
+                            else:
+                                self.movements[0] = False
+                                self.movements[1] = False
 
-            if self.buffer:
-                self.buffer[1] -= 1
-                if self.buffer[1] == 0:
-                    self.buffer=[]
-                elif self.buffer[0] == "jump":
-                    if self.player.jump():
-                        self.buffer=[]
-                elif self.buffer[0] == "dash":
-                    if self.player.dash():
-                        self.buffer=[]
-                elif self.buffer[0] == "attack":
-                    if self.player.attack():
-                        self.buffer=[]
-                    
+                    if event.type == pygame.JOYBUTTONDOWN:
+                        if event.button == 0:
+                            if not self.player.jump():
+                                self.buffer=["jump",6]
+                        if event.button == 7:
+                            if not self.player.dash():
+                                self.buffer=["dash",6]
+                        if event.button == 3:
+                            if not self.player.attack():
+                                self.buffer=["attack",6]
+                        if event.button == 4:
+                            self.player.charge_attack()
+                        if event.button == 11:
+                            self.pause = True
+                            self.movements = [False,False]  
+                    if event.type == pygame.JOYBUTTONUP:
+                        if event.button == 0 and "jump" in self.buffer:
+                            self.buffer=[]
+                            pass
+                        if event.button == 7 and "dash" in self.buffer:
+                            self.buffer=[]
+                            pass
+                        if event.button == 3 and "attack" in self.buffer:
+                            self.buffer=[]
+                            pass
 
- 
+                if self.buffer:
+                    self.buffer[1] -= 1
+                    if self.buffer[1] == 0:
+                        self.buffer=[]
+                    elif self.buffer[0] == "jump":
+                        if self.player.jump():
+                            self.buffer=[]
+                    elif self.buffer[0] == "dash":
+                        if self.player.dash():
+                            self.buffer=[]
+                    elif self.buffer[0] == "attack":
+                        if self.player.attack():
+                            self.buffer=[]
+                        
 
-            self.screen_shake_timer = max(0,self.screen_shake_timer-1)
-            self.screen_shake_offset = [random.randint(-self.screen_shake_timer,self.screen_shake_timer),random.randint(-self.screen_shake_timer,self.screen_shake_timer)]  
+    
 
+                self.screen_shake_timer = max(0,self.screen_shake_timer-1)
+                self.screen_shake_offset = [random.randint(-self.screen_shake_timer,self.screen_shake_timer),random.randint(-self.screen_shake_timer,self.screen_shake_timer)]  
+             
 
             #redering HP acording to player's HP
             for i in range(self.player.HP):
                 self.display_for_outline.blit(self.assets['HP'],(i*18,15))
+            #ranering energy acording to player's energy
+            if self.player.charge < self.player.max_charge:
+                ratio = self.player.charge/self.player.max_charge
+                pygame.draw.rect(self.display_for_outline,(255,194,14),(7,37,70*ratio,4))
+                self.display_for_outline.blit(pygame.transform.scale(self.assets['energy_empty'],(70,12)),(4,33))
+            else:
+                self.display_for_outline.blit(pygame.transform.scale(self.assets['energy_max'],(70,12)),(4,33))
             #rendering boss HP, scale the horizontal to 58
             for enemy in self.enemy_spawners:
                 if enemy.phase != 3 and enemy.HP < enemy.max_HP:
@@ -472,8 +485,19 @@ class main_game:
             self.display_for_outline.blit(self.display, (0,0))
             self.screen.blit(pygame.transform.scale(self.display_for_outline, (2*SCREEN_Width, 2*SCREEN_HEIGHT)), self.screen_shake_offset) 
             #blit self.display_entity to screen without scaling
-            if not self.dead:
+            if not self.dead and abs(self.player.dashing) < 50:
                 self.player.render_new(self.screen,offset=self.render_camera) #render player
+
+            if self.cutscene_timer > 0:    
+                self.cutscene_timer -= 1
+                if self.cutscene_timer > 110:
+                    self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(self.cutscene_timer*16-1120-HALF_SCREEN_WIDTH,self.cutscene_timer*-48+5760-HALF_SCREEN_HEIGHT))
+                elif self.cutscene_timer > 10:
+                    self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(0,0))
+                else:
+                    self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(self.cutscene_timer*16+480-HALF_SCREEN_WIDTH,self.cutscene_timer*-48+960-HALF_SCREEN_HEIGHT))
+                if self.cutscene_timer == 0:
+                    self.in_cutscene = 0
 
             if self.transition:
                 tran_surf=pygame.Surface(self.display.get_size())
