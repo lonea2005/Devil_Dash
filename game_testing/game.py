@@ -48,6 +48,7 @@ class main_game:
         self.movements = [False,False]
 
         self.assets = {
+            "title_screen": load_image("標題畫面.jpg"),
             "decor" : load_tile("tiles/decor"),
             "stone" : load_tile("tiles/stone"),
             "grass" : load_tile("tiles/grass"),
@@ -97,7 +98,6 @@ class main_game:
 
 
         self.level = 0
-        self.load_level()
 
     def load_level(self,new_level=True):
 
@@ -150,9 +150,8 @@ class main_game:
                 pygame.mixer.music.set_volume(0.4)
                 pygame.mixer.music.play(-1)
 
-    def run(self):
-
-        #self.sfx["ambience"].play(-1)
+    def run_game(self):
+        
         while True:
             while self.pause:
                 for event in pygame.event.get():
@@ -499,4 +498,21 @@ class main_game:
     def first_phase_cutscene(self):
         pass
 
-main_game().run()
+    def run_main_menu(self):
+        while True:
+            #blit the title screen and scale it to the screen size
+            self.screen.blit(pygame.transform.scale(self.assets["title_screen"], (SCREEN_Width, SCREEN_HEIGHT)),(0,0))
+            pygame.display.flip()
+            self.clock.tick(FPS)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        self.load_level()
+                        self.run_game()
+
+
+if __name__ == "__main__":
+    main_game().run_main_menu()
