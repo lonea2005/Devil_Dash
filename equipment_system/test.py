@@ -3,15 +3,28 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import os
-
-# 从 items.py 导入函数
 from items import get_weapons, get_spell_cards, get_accessories
 
-# 使用导入的函数来填充 GEAR_DATA
+# 使用导入的函数来填充 GEAR_DATA，并在这里添加图片路径
 GEAR_DATA = {
-    "武器": [(weapon.name, weapon.discription, "images/weapon.png") for weapon in get_weapons()],
-    "符卡": [(spell_card.name, spell_card.discription, "images/spell_card.png") for spell_card in get_spell_cards()],
-    "配件": [(accessory.name, accessory.discription, "images/accessory.png") for accessory in get_accessories()],
+    "武器": [
+        (weapon.name, weapon.discription, "images/sword.png") if weapon.name == "七耀魔法書" else
+        (weapon.name, weapon.discription, "images/axe.png") if weapon.name == "貪欲的叉勺" else
+        (weapon.name, weapon.discription, "images/default_weapon.png")
+        for weapon in get_weapons()
+    ],
+    "符卡": [
+        (spell_card.name, spell_card.discription, "images/fireball.png") if spell_card.name == "Fireball" else
+        (spell_card.name, spell_card.discription, "images/ice_shard.png") if spell_card.name == "Ice Shard" else
+        (spell_card.name, spell_card.discription, "images/default_spell_card.png")
+        for spell_card in get_spell_cards()
+    ],
+    "配件": [
+        (accessory.name, accessory.discription, "images/ring.png") if accessory.name == "Ring" else
+        (accessory.name, accessory.discription, "images/amulet.png") if accessory.name == "Amulet" else
+        (accessory.name, accessory.discription, "images/default_accessory.png")
+        for accessory in get_accessories()
+    ],
 }
 
 class GearSelectorApp(tk.Tk):
@@ -19,6 +32,9 @@ class GearSelectorApp(tk.Tk):
         super().__init__()
         self.title("裝備選擇介面")
         self.geometry("1000x600")
+
+        # 打印当前工作目录
+        print(f"Current working directory: {os.getcwd()}")
 
         # 初始化狀態
         self.categories = list(GEAR_DATA.keys())  # 裝備分類列表
@@ -73,15 +89,16 @@ class GearSelectorApp(tk.Tk):
             self.gear_labels[category] = []
 
             for i, (name, desc, img_path) in enumerate(GEAR_DATA[category]):
-                label = tk.Label(frame, text=name, font=("Arial", 12), width=15, height=10, borderwidth=2, relief="groove", compound="top")
+                label = tk.Label(frame, text=name, font=("Arial", 12), width=150, height=150, borderwidth=2, relief="groove", compound="top")
                 label.grid(row=1, column=i, padx=10)
 
                 # 加載圖片
                 if os.path.exists(img_path):
                     try:
-                        img = Image.open(img_path).resize((100, 100))
+                        # 调整图片大小
+                        img = Image.open(img_path).resize((150, 150))  # 在这里调整图片大小，上面width=150, height=150調框
                         photo = ImageTk.PhotoImage(img)
-                        label.config(image=photo)
+                        label.config(image=photo, text=name, compound="top", borderwidth=1, relief="solid")  # 在这里调整图片外框
                         label.image = photo  # 防止垃圾回收
                     except Exception as e:
                         print(f"Error loading image {img_path}: {e}")
