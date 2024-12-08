@@ -1,4 +1,3 @@
-# equipment.py
 import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
@@ -51,12 +50,20 @@ class GearSelectorApp(tk.Tk):
         self.on_complete_selection = False  # 是否移動到完成選擇的狀態
 
         # 建立主視窗框架
-        self.left_frame = tk.Frame(self, width=300, bg="white")
-        self.left_frame.pack(side="left", fill="y")
+        # 在 __init__ 方法中，调整布局
+        self.bottom_frame = tk.Frame(self, height=50, bg="white")  # 创建底部框架
+        self.bottom_frame.pack(side="bottom", fill="x")
 
-        self.main_canvas = tk.Canvas(self, width=700, height=600)
-        self.scrollbar_y = tk.Scrollbar(self, orient="vertical", command=self.main_canvas.yview)
-        self.scrollbar_x = tk.Scrollbar(self, orient="horizontal", command=self.main_canvas.xview)
+        self.main_frame = tk.Frame(self)
+        self.main_frame.pack(side="top", fill="both", expand=True)
+
+        self.left_frame = tk.Frame(self.main_frame, width=300, bg="white")  # 在这里设置选择摘要栏的宽度
+        self.left_frame.pack(side="left", fill="y")
+        self.left_frame.pack_propagate(False)  # 防止框架根据内容自动调整大小
+
+        self.main_canvas = tk.Canvas(self.main_frame, width=700, height=550)  # 调整高度以留出底部空间
+        self.scrollbar_y = tk.Scrollbar(self.main_frame, orient="vertical", command=self.main_canvas.yview)
+        self.scrollbar_x = tk.Scrollbar(self.main_frame, orient="horizontal", command=self.main_canvas.xview)
         self.scrollable_frame = tk.Frame(self.main_canvas)
 
         self.scrollable_frame.bind(
@@ -81,6 +88,9 @@ class GearSelectorApp(tk.Tk):
         self.bind("<Down>", self.navigate_down)
         self.bind("<Return>", self.select_item_or_complete)
 
+        # 窗口大小调整时更新“選擇完成”按钮的位置
+        self.bind("<Configure>", self.update_complete_button_position)
+
     def create_widgets(self):
         """
         創建視窗中顯示裝備的元件
@@ -96,14 +106,14 @@ class GearSelectorApp(tk.Tk):
             self.gear_labels[category] = []
 
             for i, (name, desc, img_path) in enumerate(GEAR_DATA[category]):
-                label = tk.Label(frame, text=name, font=("Arial", 12), width=150, height=150, borderwidth=2, relief="groove", compound="top")
+                label = tk.Label(frame, text=name, font=("Arial", 12), borderwidth=2, relief="groove", compound="top")
                 label.grid(row=1, column=i, padx=10)
 
                 # 加載圖片
                 if os.path.exists(img_path):
                     try:
                         # 调整图片大小
-                        img = Image.open(img_path).resize((150, 150))  # 在这里调整图片大小，上面width=150, height=150調框
+                        img = Image.open(img_path).resize((150, 150))  # 在这里调整图片大小
                         photo = ImageTk.PhotoImage(img)
                         label.config(image=photo, text=name, compound="top", borderwidth=1, relief="solid")  # 在这里调整图片外框
                         label.image = photo  # 防止垃圾回收
@@ -114,13 +124,19 @@ class GearSelectorApp(tk.Tk):
                 self.gear_labels[category].append(label)
 
         # 在最後一行添加 "選擇完成"
-        self.complete_label = tk.Label(self.scrollable_frame, text="選擇完成", font=("Arial", 16),
-                                       borderwidth=2, relief="groove", width=20, height=2, bg="gray")
-        self.complete_label.grid(row=len(self.categories), column=0, pady=20)
+        self.complete_label = tk.Label(self.bottom_frame, text="選擇完成", font=("Arial", 16),
+                               borderwidth=2, relief="groove", width=20, height=2, bg="gray")
+        self.complete_label.pack(pady=10)  # 将按钮放置在底部框架中
 
         # 初始化顯示
         self.update_display()
         self.update_summary()
+
+    def update_complete_button_position(self, event=None):
+        """
+        更新“選擇完成”按钮的位置，使其始终位于窗口底部的中间
+        """
+        self.complete_label.place(relx=0.5, rely=1.0, anchor="s")
 
     def update_display(self):
         """
@@ -158,7 +174,7 @@ class GearSelectorApp(tk.Tk):
         for widget in self.left_frame.winfo_children():
             widget.destroy()
 
-        tk.Label(self.left_frame, text="選擇摘要", font=("Arial", 16), bg="white").pack(anchor="n", pady=10)
+        tk.Label(self.left_frame, text="選擇摘要", font=("Arial", 16), bg="white", wraplength=280).pack(anchor="n", pady=10)  # 在这里设置 wraplength 以确保文本换行
 
         for category in self.categories:
             selected_idx = self.selected_indices[category]
@@ -167,7 +183,7 @@ class GearSelectorApp(tk.Tk):
             else:
                 name, desc, img_path = GEAR_DATA[category][selected_idx]
                 summary = f"{category}: {name}\n{desc}"
-            tk.Label(self.left_frame, text=summary, bg="white", font=("Arial", 12), justify="left").pack(anchor="w", pady=5)
+            tk.Label(self.left_frame, text=summary, bg="white", font=("Arial", 12), justify="left", wraplength=280).pack(anchor="w", pady=5)  # 在这里设置 wraplength 以确保文本换行
 
     def navigate_left(self, event):
         """

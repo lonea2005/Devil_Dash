@@ -3,15 +3,35 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import os
-
-# 从 items.py 导入函数
 from items import get_weapons, get_spell_cards, get_accessories
 
-# 使用导入的函数来填充 GEAR_DATA
+# 使用导入的函数来填充 GEAR_DATA，并在这里添加图片路径
 GEAR_DATA = {
-    "武器": [(weapon.name, weapon.discription, "images/weapon.png") for weapon in get_weapons()],
-    "符卡": [(spell_card.name, spell_card.discription, "images/spell_card.png") for spell_card in get_spell_cards()],
-    "配件": [(accessory.name, accessory.discription, "images/accessory.png") for accessory in get_accessories()],
+    "武器": [
+        (weapon.name, weapon.discription, "images/weapon01.png") if weapon.name == "七耀魔法書" else
+        (weapon.name, weapon.discription, "images/weapon02.png") if weapon.name == "貪欲的叉勺" else
+        (weapon.name, weapon.discription, "images/default_weapon.png")
+        for weapon in get_weapons()
+    ],
+    "符卡": [
+        (spell_card.name, spell_card.discription, "images/spell_card01.png") if spell_card.name == "彩符「彩光亂舞」" else
+        (spell_card.name, spell_card.discription, "images/spell_card02.png") if spell_card.name == "逆符「階級反轉」" else
+        (spell_card.name, spell_card.discription, "images/spell_card03.png") if spell_card.name == "戀符「極限火花」" else
+        (spell_card.name, spell_card.discription, "images/default_spell_card.png")
+        for spell_card in get_spell_cards()
+    ],
+    "配件": [
+        (accessory.name, accessory.discription, "images/accessory01.png") if accessory.name == "水晶吊墜" else
+        (accessory.name, accessory.discription, "images/accessory02.png") if accessory.name == "心型吊墜" else
+        (accessory.name, accessory.discription, "images/accessory03.png") if accessory.name == "亡靈提燈" else
+        (accessory.name, accessory.discription, "images/accessory04.png") if accessory.name == "蝙蝠吊墜" else
+        (accessory.name, accessory.discription, "images/accessory05.png") if accessory.name == "銀製匕首" else
+        (accessory.name, accessory.discription, "images/accessory06.png") if accessory.name == "斷線的人偶" else
+        (accessory.name, accessory.discription, "images/accessory07.png") if accessory.name == "神社的符咒" else
+        (accessory.name, accessory.discription, "images/accessory08.png") if accessory.name == "巫女的御幣" else
+        (accessory.name, accessory.discription, "images/default_accessory.png")
+        for accessory in get_accessories()
+    ],
 }
 
 class GearSelectorApp(tk.Tk):
@@ -19,6 +39,9 @@ class GearSelectorApp(tk.Tk):
         super().__init__()
         self.title("裝備選擇介面")
         self.geometry("1000x600")
+
+        # 打印当前工作目录
+        print(f"Current working directory: {os.getcwd()}")
 
         # 初始化狀態
         self.categories = list(GEAR_DATA.keys())  # 裝備分類列表
@@ -28,8 +51,9 @@ class GearSelectorApp(tk.Tk):
         self.on_complete_selection = False  # 是否移動到完成選擇的狀態
 
         # 建立主視窗框架
-        self.left_frame = tk.Frame(self, width=300, bg="white")
+        self.left_frame = tk.Frame(self, width=300, bg="white")  # 在这里设置选择摘要栏的宽度
         self.left_frame.pack(side="left", fill="y")
+        self.left_frame.pack_propagate(False)  # 防止框架根据内容自动调整大小
 
         self.main_canvas = tk.Canvas(self, width=700, height=600)
         self.scrollbar_y = tk.Scrollbar(self, orient="vertical", command=self.main_canvas.yview)
@@ -73,15 +97,16 @@ class GearSelectorApp(tk.Tk):
             self.gear_labels[category] = []
 
             for i, (name, desc, img_path) in enumerate(GEAR_DATA[category]):
-                label = tk.Label(frame, text=name, font=("Arial", 12), width=15, height=10, borderwidth=2, relief="groove", compound="top")
+                label = tk.Label(frame, text=name, font=("Arial", 12), borderwidth=2, relief="groove", compound="top")
                 label.grid(row=1, column=i, padx=10)
 
                 # 加載圖片
                 if os.path.exists(img_path):
                     try:
-                        img = Image.open(img_path).resize((100, 100))
+                        # 调整图片大小
+                        img = Image.open(img_path).resize((150, 150))  # 在这里调整图片大小
                         photo = ImageTk.PhotoImage(img)
-                        label.config(image=photo)
+                        label.config(image=photo, text=name, compound="top", borderwidth=1, relief="solid")  # 在这里调整图片外框
                         label.image = photo  # 防止垃圾回收
                     except Exception as e:
                         print(f"Error loading image {img_path}: {e}")
@@ -134,7 +159,7 @@ class GearSelectorApp(tk.Tk):
         for widget in self.left_frame.winfo_children():
             widget.destroy()
 
-        tk.Label(self.left_frame, text="選擇摘要", font=("Arial", 16), bg="white").pack(anchor="n", pady=10)
+        tk.Label(self.left_frame, text="選擇摘要", font=("Arial", 16), bg="white", wraplength=280).pack(anchor="n", pady=10)  # 在这里设置 wraplength 以确保文本换行
 
         for category in self.categories:
             selected_idx = self.selected_indices[category]
@@ -143,7 +168,7 @@ class GearSelectorApp(tk.Tk):
             else:
                 name, desc, img_path = GEAR_DATA[category][selected_idx]
                 summary = f"{category}: {name}\n{desc}"
-            tk.Label(self.left_frame, text=summary, bg="white", font=("Arial", 12), justify="left").pack(anchor="w", pady=5)
+            tk.Label(self.left_frame, text=summary, bg="white", font=("Arial", 12), justify="left", wraplength=280).pack(anchor="w", pady=5)  # 在这里设置 wraplength 以确保文本换行
 
     def navigate_left(self, event):
         """
