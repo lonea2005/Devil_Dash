@@ -8,20 +8,27 @@ from items import get_weapons, get_spell_cards, get_accessories
 # 使用导入的函数来填充 GEAR_DATA，并在这里添加图片路径
 GEAR_DATA = {
     "武器": [
-        (weapon.name, weapon.discription, "images/sword.png") if weapon.name == "七耀魔法書" else
-        (weapon.name, weapon.discription, "images/axe.png") if weapon.name == "貪欲的叉勺" else
+        (weapon.name, weapon.discription, "images/weapon01.png") if weapon.name == "七耀魔法書" else
+        (weapon.name, weapon.discription, "images/weapon02.png") if weapon.name == "貪欲的叉勺" else
         (weapon.name, weapon.discription, "images/default_weapon.png")
         for weapon in get_weapons()
     ],
     "符卡": [
-        (spell_card.name, spell_card.discription, "images/fireball.png") if spell_card.name == "Fireball" else
-        (spell_card.name, spell_card.discription, "images/ice_shard.png") if spell_card.name == "Ice Shard" else
+        (spell_card.name, spell_card.discription, "images/spell_card01.png") if spell_card.name == "彩符「彩光亂舞」" else
+        (spell_card.name, spell_card.discription, "images/spell_card02.png") if spell_card.name == "逆符「階級反轉」" else
+        (spell_card.name, spell_card.discription, "images/spell_card03.png") if spell_card.name == "戀符「極限火花」" else
         (spell_card.name, spell_card.discription, "images/default_spell_card.png")
         for spell_card in get_spell_cards()
     ],
     "配件": [
-        (accessory.name, accessory.discription, "images/ring.png") if accessory.name == "Ring" else
-        (accessory.name, accessory.discription, "images/amulet.png") if accessory.name == "Amulet" else
+        (accessory.name, accessory.discription, "images/accessory01.png") if accessory.name == "水晶吊墜" else
+        (accessory.name, accessory.discription, "images/accessory02.png") if accessory.name == "心型吊墜" else
+        (accessory.name, accessory.discription, "images/accessory03.png") if accessory.name == "亡靈提燈" else
+        (accessory.name, accessory.discription, "images/accessory04.png") if accessory.name == "蝙蝠吊墜" else
+        (accessory.name, accessory.discription, "images/accessory05.png") if accessory.name == "銀製匕首" else
+        (accessory.name, accessory.discription, "images/accessory06.png") if accessory.name == "斷線的人偶" else
+        (accessory.name, accessory.discription, "images/accessory07.png") if accessory.name == "神社的符咒" else
+        (accessory.name, accessory.discription, "images/accessory08.png") if accessory.name == "巫女的御幣" else
         (accessory.name, accessory.discription, "images/default_accessory.png")
         for accessory in get_accessories()
     ],
