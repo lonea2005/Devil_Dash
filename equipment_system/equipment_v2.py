@@ -49,16 +49,11 @@ class GearSelectorApp(tk.Tk):
         self.current_item_index = 0  # 當前分類中的焦點索引（初始為第一個項目）
         self.selected_indices = {cat: None for cat in self.categories}  # 每個分類的選擇結果
         self.on_complete_selection = False  # 是否移動到完成選擇的狀態
-        ###
-        self.background_image = ImageTk.PhotoImage(file="images/background.png")
 
         # 建立主視窗框架
         # 在 __init__ 方法中，调整布局
         self.bottom_frame = tk.Frame(self, height=50, bg="white")  # 创建底部框架
         self.bottom_frame.pack(side="bottom", fill="x")
-        ###
-        self.bottom_frame_background = tk.Label(self.bottom_frame, image=self.background_image)
-        self.bottom_frame_background.place(relwidth=1, relheight=1)
 
         self.main_frame = tk.Frame(self)
         self.main_frame.pack(side="top", fill="both", expand=True)
@@ -66,13 +61,8 @@ class GearSelectorApp(tk.Tk):
         self.left_frame = tk.Frame(self.main_frame, width=300, bg="white")  # 在这里设置选择摘要栏的宽度
         self.left_frame.pack(side="left", fill="y")
         self.left_frame.pack_propagate(False)  # 防止框架根据内容自动调整大小
-        ###
-        self.left_frame_background = tk.Label(self.left_frame, image=self.background_image)
-        self.left_frame_background.place(relwidth=1, relheight=1)
 
         self.main_canvas = tk.Canvas(self.main_frame, width=700, height=550)  # 调整高度以留出底部空间
-        ###
-        self.main_canvas.create_image(0, 0, image=self.background_image, anchor="nw")
         self.scrollbar_y = tk.Scrollbar(self.main_frame, orient="vertical", command=self.main_canvas.yview)
         self.scrollbar_x = tk.Scrollbar(self.main_frame, orient="horizontal", command=self.main_canvas.xview)
         self.scrollable_frame = tk.Frame(self.main_canvas)
