@@ -491,10 +491,20 @@ class main_game:
             if self.cutscene_timer > 0:    
                 self.cutscene_timer -= 1
                 if self.cutscene_timer > 110:
+                    #if self.cutscene_timer > 100
+                    x = 960 + (740-960) * (self.cutscene_timer - 120)/ (100-120)
+                    y = 0 + (405-0) * (self.cutscene_timer - 120)/ (100-120)
+                    #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(x,y))
                     self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(self.cutscene_timer*16-1120-HALF_SCREEN_WIDTH,self.cutscene_timer*-48+5760-HALF_SCREEN_HEIGHT))
                 elif self.cutscene_timer > 10:
+                    x = 740 + (540-740) * (self.cutscene_timer - 100)/ (20-100)
+                    y = 405 + (555-405) * (self.cutscene_timer - 100)/ (20-100)
+                    #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(x,y))
                     self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(0,0))
                 else:
+                    x = 540 + (320-540) * (self.cutscene_timer - 20)/ (0-20)
+                    y = 555 + (960-555) * (self.cutscene_timer - 20)/ (0-20)
+                    #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(x,y))
                     self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(self.cutscene_timer*16+480-HALF_SCREEN_WIDTH,self.cutscene_timer*-48+960-HALF_SCREEN_HEIGHT))
                 if self.cutscene_timer == 0:
                     self.in_cutscene = 0
