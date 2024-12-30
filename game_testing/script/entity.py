@@ -258,9 +258,9 @@ class Player(physics_entity):
                 #attack a rect-space area in front of the player
                 #if charge is full, attack will deal additional damage
                 if self.flip:
-                    hitbox = pygame.Rect(self.position[0]-36,self.position[1],28,16)
+                    hitbox = pygame.Rect(self.rect().centerx -36,self.rect().centery,28,16)
                 else:
-                    hitbox = pygame.Rect(self.position[0]+8,self.position[1],28,16)   
+                    hitbox = pygame.Rect(self.rect().centerx +8,self.rect().centery,28,16)   
                 for enemy in self.main_game.enemy_spawners:
                     if hitbox.colliderect(enemy.rect()):
                         enemy.HP -= 1.5*self.damage if self.charge == self.max_charge else self.damage
@@ -422,6 +422,11 @@ class Enemy(physics_entity):
         self.max_HP = self.HP
         #combo 1: jump - dash - drop attack - land shot
         #combo 2: dash forward and shoot 3 bullets
+        self.test_stats()
+    
+    def test_stats(self):
+        #self.HP=1
+        pass
 
     def update(self, movement=(0,0),tilemap=None):
         self.time_counter += 1
