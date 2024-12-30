@@ -151,15 +151,15 @@ class Player(physics_entity):
         if self.weapon == "貪欲的叉勺":
             self.damage = 3
             self.max_attack_cool_down = 20
-            self.max_charge = 100
-            self.charge_per_hit = 10
+            self.max_charge = 8
+            self.charge_per_hit = 1
             self.charge = 0
         elif self.weapon == "七耀魔法書":
             self.max_mana = 30
             self.mana = self.max_mana
         else:
-            self.max_charge = 60
-            self.charge_per_hit = 10
+            self.max_charge = 10
+            self.charge_per_hit = 1
             self.charge = 0
 
         self.spell_card = spell_card.name if spell_card else "none"
@@ -256,13 +256,14 @@ class Player(physics_entity):
             self.attack_cool_down = self.max_attack_cool_down
             if self.weapon == "none":
                 #attack a rect-space area in front of the player
+                #if charge is full, attack will deal additional damage
                 if self.flip:
-                    hitbox = pygame.Rect(self.position[0]-36,self.position[1],28,16)
+                    hitbox = pygame.Rect(self.rect().centerx -36,self.rect().centery,28,16)
                 else:
-                    hitbox = pygame.Rect(self.position[0]+8,self.position[1],28,16)   
+                    hitbox = pygame.Rect(self.rect().centerx +8,self.rect().centery,28,16)   
                 for enemy in self.main_game.enemy_spawners:
                     if hitbox.colliderect(enemy.rect()):
-                        enemy.HP -= self.damage
+                        enemy.HP -= 1.5*self.damage if self.charge == self.max_charge else self.damage
                         self.charge = min(self.charge+self.charge_per_hit,self.max_charge)
                         self.main_game.sfx['hit'].play()
                         for i in range(30):
@@ -327,9 +328,14 @@ class Player(physics_entity):
             pass
         else:
             #heal
-            if self.charge == 60:
+            if self.charge == self.max_charge:
                 for i in range(30):
-                    self.main_game.sparks.append(Flexible_Spark((self.rect().center[0]+random.randint(-8,8),self.rect().center[1]), 1.5*math.pi, 2.5+random.random(),(0,255,0)))
+                    #add leaf particle arround the player
+                    angle = random.random()*math.pi*2
+                    speed = random.random() *5
+                    #self.main_game.sparks.append(Flexible_Spark(self.rect().center,angle,2+random.random(),(0,255,0)))
+                    self.main_game.particles.append(Particle(self.main_game,'particle',self.rect().center,[math.cos(angle+math.pi)*speed*0.5,math.sin(angle+math.pi)*speed*0.5],frame=random.randint(0,7)))
+
                 #self.main_game.sfx['heal'].play()
                 self.HP = min(self.HP+1,6)
                 self.charge = 0
@@ -402,20 +408,25 @@ class Enemy(physics_entity):
         self.attack_preview_pos_b = None
 
         if self.phase == 1:
-            self.HP = 16
+            self.HP = 25
             #self.HP = 1
         elif self.phase == 2:
-            self.HP = 20
+            self.HP = 25
             #self.HP = 1
         elif self.phase == 3:
-            self.HP = 2130
+            self.HP = 2250
             self.using_spell_card = True
-            self.timer_HP = 2130
-            self.max_HP = 2130
+            self.timer_HP = 2250
+            self.max_HP = 2250
         self.attack_combo = 0
         self.max_HP = self.HP
         #combo 1: jump - dash - drop attack - land shot
         #combo 2: dash forward and shoot 3 bullets
+        self.test_stats()
+    
+    def test_stats(self):
+        #self.HP=1
+        pass
 
     def update(self, movement=(0,0),tilemap=None):
         self.time_counter += 1
@@ -823,7 +834,8 @@ class Enemy(physics_entity):
         for i in range(3):
             self.main_game.special_projectiles.append(Special_Projectile(self.rect().center,[random.random()*2-1,random.random()*2-1],1,"projectile",max_timer=30,type="small_explode",main_game=self.main_game))
 
-
+    def cut_in(self):
+        self.main_game.cutscene_timer = 120
 
     def render(self,surface,offset=[0,0]):
         super().render(surface,offset)
