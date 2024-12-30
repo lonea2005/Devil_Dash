@@ -25,7 +25,7 @@ GEAR_DATA = {
         (accessory.name, accessory.discription, "images/心型吊墜.png") if accessory.name == "心型吊墜" else
         (accessory.name, accessory.discription, "images/亡靈提燈.png") if accessory.name == "亡靈提燈" else
         (accessory.name, accessory.discription, "images/accessory04.png") if accessory.name == "蝙蝠吊墜" else
-        #(accessory.name, accessory.discription, "images/銀製匕首.png") if accessory.name == "銀製匕首" else
+        (accessory.name, accessory.discription, "images/銀製匕首.png") if accessory.name == "銀製匕首" else
         (accessory.name, accessory.discription, "images/斷線的人偶.png") if accessory.name == "斷線的人偶" else
         (accessory.name, accessory.discription, "images/神社的符咒.png") if accessory.name == "神社的符咒" else
         (accessory.name, accessory.discription, "images/巫女的御幣.png") if accessory.name == "巫女的御幣" else
