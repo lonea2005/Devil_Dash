@@ -7,9 +7,9 @@ from script.tilemap import Tilemap, small_tile
 RENDER_SCALE = 2
 
 #constantsx
-SCREEN_Width = 640
+SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
-HALF_SCREEN_WIDTH = SCREEN_Width // 2
+HALF_SCREEN_WIDTH = SCREEN_WIDTH // 2
 HALF_SCREEN_HEIGHT = SCREEN_HEIGHT // 2
 FPS = 60
 
@@ -23,7 +23,7 @@ class editor:
             self.joystick.init()
 
         pygame.display.set_caption("Koakuma's Adventure editor")
-        self.screen = pygame.display.set_mode((SCREEN_Width, SCREEN_HEIGHT))
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         #放大兩倍
         self.display = pygame.Surface((HALF_SCREEN_WIDTH, HALF_SCREEN_HEIGHT))
 
@@ -150,7 +150,7 @@ class editor:
                     if event.key == pygame.K_LSHIFT:
                         self.shift = False
 
-            self.screen.blit(pygame.transform.scale(self.display, (SCREEN_Width, SCREEN_HEIGHT)), (0,0))
+            self.screen.blit(pygame.transform.scale(self.display, (SCREEN_WIDTH, SCREEN_HEIGHT)), (0,0))
             pygame.display.update()
             self.clock.tick(FPS)
 

@@ -189,6 +189,9 @@ class Player(physics_entity):
         #testing stats goes here
         #self.damage = 100
         #self.weapon = "貪欲的叉勺"
+
+        #self.weapon = "反則之書"
+        #self.accessory = ["蝙蝠吊墜"]
         pass
 
 
@@ -247,6 +250,8 @@ class Player(physics_entity):
             self.jump_count -= 1
             self.air_time = 5
             self.set_action('jump')
+            if self.dashing and self.weapon == "反則之書":
+                self.dashing = 0
             return True
         return False
 
