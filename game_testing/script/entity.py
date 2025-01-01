@@ -413,10 +413,12 @@ class Enemy(physics_entity):
         self.attack_preview_pos_b = None
 
         if self.phase == 1:
-            self.HP = 25
+            self.HP = 35
+            self.action_queue = [300]
+            self.p1_shoot_count = 0
             #self.HP = 1
         elif self.phase == 2:
-            self.HP = 25
+            self.HP = 40
             #self.HP = 1
         elif self.phase == 3:
             self.HP = 2250
@@ -430,11 +432,11 @@ class Enemy(physics_entity):
         self.test_stats()
     
     def test_stats(self):
-        #self.HP=1
+        self.HP=25
         pass
 
     def update(self, movement=(0,0),tilemap=None):
-        self.time_counter += 1
+
         if self.check_player_pos()[0] > 0:
             self.flip = False
         else:
@@ -444,84 +446,67 @@ class Enemy(physics_entity):
             self.attack_cool_down = max(0,self.attack_cool_down-1)
             if not (self.air_dashing):
                 self.velocity[1] = min(7,self.velocity[1]+0.1) #gravity
-            if self.walking and self.attack_combo == 0:
-                self.idle_time = 0
-                movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
-                self.walking = max(0,self.walking-1)
-                if not self.walking:
-                    self.normal_shoot()
-            elif (random.random() < 0.02) and self.attack_combo == 0:
-                self.idle_time = 0
-                if random.choice([True,False]):
-                    self.walking = random.randint(30,70)
-                elif self.attack_cool_down == 0:
+            if len(self.action_queue)>0 and isinstance(self.action_queue[0],int):
+                self.action_queue[0] -= 1
+                if self.action_queue[0] == 0:
+                    self.action_queue.pop(0)
+                    self.p1_shoot_count = 0
                     self.attack_combo = random.choice([1,2])
-                    if self.attack_combo == 1:
-                        self.jump()
-                        self.attack_combo = 1
-                        self.attack_cool_down = 400
-                        self.current_counter = self.time_counter
-                    elif self.attack_combo == 2:
-                        self.attack_cool_down = 400
-                        self.current_counter = self.time_counter
-            else:
-                self.idle_time += 1
+                    self.action_queue.insert(0,["empty",30])
+                    self.action_queue.insert(1,"combo()")
+                #normal detection
+                movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
+                if self.p1_shoot_count > 2:
+                    self.action_queue.pop(0)
+                    self.attack_combo = random.choice([1,2])
+                    self.p1_shoot_count = 0
+                    self.action_queue.insert(0,["empty",30])
+                    self.action_queue.insert(1,"combo()")
+                elif abs(self.check_player_pos()[0])<32:
+                    self.p1_shoot_count +=1
+                    self.action_queue.insert(0,"prepare_attack()")
+                    self.action_queue.insert(1,["empty",30])
+                    self.action_queue.insert(2,"ground_smash()")
+                    self.action_queue.insert(3,["empty",5])
+                    self.action_queue.insert(4,"screen_shake(20)")
+                    self.action_queue.insert(5,["empty",30])
+                elif abs(self.check_player_pos()[0])<144:
+                    self.p1_shoot_count +=1
+                    self.action_queue.insert(0,"normal_shoot()")
+                    self.action_queue.insert(1,["empty",20])
+                    self.action_queue.insert(1,["empty_walk",80])
 
-            if self.idle_time > 150:
-                self.idle_time = 0
-                if random.choice([True,False]):
-                    self.walking = random.randint(30,90)
-                else:
-                    self.jump()
-                    self.attack_combo = 1
-                    self.attack_cool_down = 300
-                    self.current_counter = self.time_counter
-
-
-            if self.attack_combo == 1: #jump - dash - drop attack - land shot
-                if self.jumping and (self.time_counter-self.current_counter) > 30:
-                    self.jumping = False
-                    self.velocity = [0,0]
-                    self.current_counter = self.time_counter
-                    self.air_dash()
-                elif self.air_dashing:
+            elif len(self.action_queue)>0 and isinstance(self.action_queue[0],list):
+                if self.action_queue[0][0] == "empty_walk":
+                    movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
+                    self.action_queue[0][1] -= 1
+                    if self.action_queue[0][1] == 0:
+                        self.action_queue.pop(0)
+                elif self.action_queue[0][0] == "empty":
+                    self.action_queue[0][1] -= 1
+                    if self.action_queue[0][1] == 0:
+                        self.action_queue.pop(0)
+                elif self.action_queue[0][0] == "aim_drop":
+                    self.action_queue[0][1] -= 1
                     player_pos = self.check_player_pos()
-                    if abs(player_pos[0]) < 8 or self.time_counter - self.current_counter >30:
+                    if abs(player_pos[0]) < 8 or self.action_queue[0][1] == 0:
                         self.air_dashing = False
                         self.velocity = [0,0]
+                        self.action_queue.pop(0)
+                elif self.action_queue[0][0] == "land_detect":
+                    self.action_queue[0][1] -= 1
+                    if self.check_collision['down'] or self.action_queue[0][1] == 0:
+                        self.attack_combo = 0
                         self.current_counter = self.time_counter
-                        self.drop_attack()
-                #collide with ground
-                elif self.check_collision['down'] and not self.jumping:
-                    self.attack_combo = 0
-                    self.current_counter = self.time_counter
-                    self.screen_shake(10)
-                    self.land_shoot()
+                        self.screen_shake(10)
+                        self.action_queue.pop(0)
+                
+            elif len(self.action_queue)>0:
+                exec("self."+self.action_queue.pop(0))
+            else:
+                pass
 
-            elif self.attack_combo == 2: #dash forward and shoot 3 bullets
-                #prepare time
-                if self.time_counter-self.current_counter == (1 or 65): 
-                    self.velocity[0] = 0
-                    for i in range (20):
-                        #flame effect
-                        angle = random.random()*math.pi*2
-                        speed = random.random() *3
-                        self.main_game.sparks.append(Flame(self.rect().center,angle,2+random.random()))
-                elif self.time_counter-self.current_counter == 55:
-                    self.dash()
-                elif self.time_counter-self.current_counter == 70:
-                    self.velocity[0] = 0
-                    self.normal_shoot()
-                elif self.time_counter-self.current_counter == 90:
-                    self.normal_shoot()
-                elif self.time_counter-self.current_counter == 110:
-                    self.normal_shoot()
-                elif self.time_counter-self.current_counter == 130:
-                    self.normal_shoot()
-                elif self.time_counter-self.current_counter == 200:
-                    #opportunity to attack
-                    self.attack_combo = 0
-                    self.current_counter = self.time_counter
+
         elif self.phase == 2:
             #apply gravity if not froze
             if not self.froze_in_air:
@@ -709,6 +694,18 @@ class Enemy(physics_entity):
         #boss will drop down and land, dealing damage to player if player is below
         self.velocity[1] = 7
         self.main_game.sparks.append(Spark(self.rect().center, 1.5*math.pi, 5+random.random()))
+
+
+    def combo(self):
+        if self.attack_combo == 1:
+            self.action_queue = ["jump()",["empty",30],"frozen_in_air()","air_dash()",["aim_drop",30],"drop_attack()",["land_detect",60],"land_shoot()",["empty",30],["empty_walk",60],300]
+            print("combo 1")
+        elif self.attack_combo == 2:
+            if random.random() > 0.7:
+                self.action_queue = ["prepare_attack()",["empty",55],"dash()",["empty",10],"frozen_in_air()","normal_shoot()",["empty",20],"normal_shoot()",["empty",20],"normal_shoot()",["empty",20],"normal_shoot()",["empty",140],["empty_walk",60],300]
+            else:   
+                self.attack_combo = 1
+                self.action_queue = ["prepare_attack()",["empty",55],"dash()",["empty",10],"frozen_in_air()","normal_shoot()",["empty",20],"normal_shoot()",["empty",20],"normal_shoot()",["empty",20],"normal_shoot()",["empty",100],"combo()"]
 
     def frozen_in_air(self):
         self.velocity = [0,0]
