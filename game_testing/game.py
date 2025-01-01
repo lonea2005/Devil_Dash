@@ -7,6 +7,7 @@ import math
 from script.entity import physics_entity, Player, Enemy, Diagnal_Projectile
 from script.utils import load_image
 from script.utils import load_tile
+from script.utils import load_fix_tile
 from script.utils import load_images
 from script.utils import load_trans_images,load_trans_image
 from script.utils import load_sfx
@@ -50,13 +51,15 @@ class main_game:
             "title_start_selected": load_trans_image("buttons/chosen_start_button.png"),
             "title_setting": load_trans_image("buttons/setting_button.png"),
             "title_setting_selected": load_trans_image("buttons/chosen_setting_button.png"),
-            "button_background": load_trans_image("buttons/button_bg.png"),
+            "button_background": load_trans_image("buttons/bg.png"),
             "decor" : load_tile("tiles/decor"),
             "stone" : load_tile("tiles/stone"),
             "grass" : load_tile("tiles/grass"),
             "large_decor" : load_tile("tiles/large_decor"),
+            "block" : load_fix_tile("tiles/block"),
             "player": load_image("entities/player.png"),
-            "background": load_image("background.png"),
+            #"background": load_image("background.png"),
+            "background": load_image("back.png"),
             "enemy/idle" : Animation(load_images("entities/enemy/idle"),duration=6,loop=True),
             "enemy/run" : Animation(load_images("entities/enemy/run"),duration=4,loop=True),
             "player/idle" : Animation(load_trans_images("entities/player/idle"),duration=10,loop=True),
@@ -233,7 +236,11 @@ class main_game:
 
 
             self.display.fill((0,0,0,0))
-            self.display_for_outline.blit(self.assets['background'], (0,0))
+            self.display_for_outline.blit(pygame.transform.scale(self.assets['background'],(self.assets['background'].get_width()/2,self.assets['background'].get_height()/2)), (0,0))
+            #blit a half transparent black screen on top of the background
+            decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+            decrease_light.fill((0, 0, 0, 64))  # RGBA: (0, 0, 0, 128) for half transparency
+            self.display_for_outline.blit(decrease_light, (0, 0))
 
             if self.transition < 0:
                 self.transition += 1

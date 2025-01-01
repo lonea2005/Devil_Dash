@@ -3,6 +3,7 @@ import os
 
 BASE_IMAGE_PATH = "game_testing/data/images/"
 BASE_SFX_PATH = "game_testing/data/sfx/"
+TILE_SIZE = 16
 
 def load_sfx(path):
     return pygame.mixer.Sound(BASE_SFX_PATH + path)
@@ -32,6 +33,12 @@ def load_tile(path):
     images = []
     for img_name in sorted(os.listdir(BASE_IMAGE_PATH + path)):
         images.append(load_image(path + "/" + img_name))
+    return images
+
+def load_fix_tile(path):
+    images = []
+    for img_name in sorted(os.listdir(BASE_IMAGE_PATH + path)):
+        images.append(pygame.transform.scale(load_image(path + "/" + img_name), (TILE_SIZE, TILE_SIZE)))
     return images
 
 class Animation:
