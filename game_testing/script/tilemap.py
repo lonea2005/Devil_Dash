@@ -2,7 +2,7 @@ import pygame
 import pickle
 
 NEIGHBORS = [(0,0),(0,1), (0,-1), (1,0), (-1,0), (1,1), (-1,-1), (1,-1), (-1,1)]
-HAVE_COLLISION = {'stone', 'grass'}
+HAVE_COLLISION = {'stone', 'grass', 'block'}
 
 class small_tile:
     def __init__(self, type, variant, pos=[0,0]):

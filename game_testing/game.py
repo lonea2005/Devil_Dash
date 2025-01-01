@@ -7,6 +7,7 @@ import math
 from script.entity import physics_entity, Player, Enemy, Diagnal_Projectile
 from script.utils import load_image
 from script.utils import load_tile
+from script.utils import load_fix_tile
 from script.utils import load_images
 from script.utils import load_trans_images,load_trans_image
 from script.utils import load_sfx
@@ -16,11 +17,9 @@ from script.particle import Particle
 from script.spark import Spark, Flame, Ice_Flame, Gold_Flame, Dark_Blue_Flame,Flexible_Spark    
 
 #constants
-SCREEN_Width = 640
-SCREEN_HEIGHT = 480
-SCREEN_Width = 1280
+SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 960
-HALF_SCREEN_WIDTH = SCREEN_Width // 2
+HALF_SCREEN_WIDTH = SCREEN_WIDTH // 2
 HALF_SCREEN_HEIGHT = SCREEN_HEIGHT // 2
 FPS = 60
 
@@ -34,11 +33,11 @@ class main_game:
             self.joystick.init()
 
         pygame.display.set_caption("Devil Dash")
-        self.screen = pygame.display.set_mode((SCREEN_Width, SCREEN_HEIGHT),pygame.SRCALPHA)
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT),pygame.SRCALPHA)
         #放大兩倍
         self.display = pygame.Surface((HALF_SCREEN_WIDTH, HALF_SCREEN_HEIGHT), pygame.SRCALPHA)
         self.display_for_outline = pygame.Surface((HALF_SCREEN_WIDTH, HALF_SCREEN_HEIGHT))
-        self.display_pause = pygame.Surface((SCREEN_Width, SCREEN_HEIGHT),pygame.SRCALPHA)
+        self.display_pause = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT),pygame.SRCALPHA)
 
         self.clock = pygame.time.Clock()
         
@@ -52,13 +51,15 @@ class main_game:
             "title_start_selected": load_trans_image("buttons/chosen_start_button.png"),
             "title_setting": load_trans_image("buttons/setting_button.png"),
             "title_setting_selected": load_trans_image("buttons/chosen_setting_button.png"),
-            "button_background": load_trans_image("buttons/button_bg.png"),
+            "button_background": load_trans_image("buttons/bg.png"),
             "decor" : load_tile("tiles/decor"),
             "stone" : load_tile("tiles/stone"),
             "grass" : load_tile("tiles/grass"),
             "large_decor" : load_tile("tiles/large_decor"),
+            "block" : load_fix_tile("tiles/block"),
             "player": load_image("entities/player.png"),
-            "background": load_image("background.png"),
+            #"background": load_image("background.png"),
+            "background": load_image("back.png"),
             "enemy/idle" : Animation(load_images("entities/enemy/idle"),duration=6,loop=True),
             "enemy/run" : Animation(load_images("entities/enemy/run"),duration=4,loop=True),
             "player/idle" : Animation(load_trans_images("entities/player/idle"),duration=10,loop=True),
@@ -219,23 +220,27 @@ class main_game:
                 self.pause_select_cd = max(0,self.pause_select_cd-1)
                 
                 self.display_pause.fill((0, 0, 0, 0))   
-                self.display_pause.blit(self.assets['retry'], (SCREEN_Width//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16-18 - self.assets['retry'].get_height()//2))
-                self.display_pause.blit(self.assets['retry'], (SCREEN_Width//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16 - self.assets['retry'].get_height()//2))
-                self.display_pause.blit(self.assets['retry'], (SCREEN_Width//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16+18 - self.assets['retry'].get_height()//2))
+                self.display_pause.blit(self.assets['retry'], (SCREEN_WIDTH//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16-18 - self.assets['retry'].get_height()//2))
+                self.display_pause.blit(self.assets['retry'], (SCREEN_WIDTH//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16 - self.assets['retry'].get_height()//2))
+                self.display_pause.blit(self.assets['retry'], (SCREEN_WIDTH//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16+18 - self.assets['retry'].get_height()//2))
                 if self.pause_select == 0:
-                    self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_Width//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16-18 - self.assets['pressed_retry'].get_height()//2))
+                    self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_WIDTH//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16-18 - self.assets['pressed_retry'].get_height()//2))
                 elif self.pause_select == 1:
-                    self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_Width//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16 - self.assets['pressed_retry'].get_height()//2))
+                    self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_WIDTH//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16 - self.assets['pressed_retry'].get_height()//2))
                 elif self.pause_select == 2:
-                    self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_Width//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16+18 - self.assets['pressed_retry'].get_height()//2))
+                    self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_WIDTH//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16+18 - self.assets['pressed_retry'].get_height()//2))
 
-                self.screen.blit(pygame.transform.scale(self.display_pause, (8*SCREEN_Width, 8*SCREEN_HEIGHT)), self.screen_shake_offset) 
+                self.screen.blit(pygame.transform.scale(self.display_pause, (8*SCREEN_WIDTH, 8*SCREEN_HEIGHT)), self.screen_shake_offset) 
                 pygame.display.update()
                 self.clock.tick(FPS)
 
 
             self.display.fill((0,0,0,0))
-            self.display_for_outline.blit(self.assets['background'], (0,0))
+            self.display_for_outline.blit(pygame.transform.scale(self.assets['background'],(self.assets['background'].get_width()/2,self.assets['background'].get_height()/2)), (0,0))
+            #blit a half transparent black screen on top of the background
+            decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+            decrease_light.fill((0, 0, 0, 64))  # RGBA: (0, 0, 0, 128) for half transparency
+            self.display_for_outline.blit(decrease_light, (0, 0))
 
             if self.transition < 0:
                 self.transition += 1
@@ -493,7 +498,7 @@ class main_game:
                 
                       
             self.display_for_outline.blit(self.display, (0,0))
-            self.screen.blit(pygame.transform.scale(self.display_for_outline, (2*SCREEN_Width, 2*SCREEN_HEIGHT)), self.screen_shake_offset) 
+            self.screen.blit(pygame.transform.scale(self.display_for_outline, (2*SCREEN_WIDTH, 2*SCREEN_HEIGHT)), self.screen_shake_offset) 
             #blit self.display_entity to screen without scaling
             if not self.dead and abs(self.player.dashing) < 50:
                 self.player.render_new(self.screen,offset=self.render_camera) #render player
@@ -504,18 +509,18 @@ class main_game:
                     #if self.cutscene_timer > 100
                     x = 960 + (740-960) * (self.cutscene_timer - 120)/ (100-120)-HALF_SCREEN_WIDTH
                     y = 0 + (405-0) * (self.cutscene_timer - 120)/ (100-120)-HALF_SCREEN_HEIGHT
-                    self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(x,y))
-                    #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(self.cutscene_timer*16-1120-HALF_SCREEN_WIDTH,self.cutscene_timer*-48+5760-HALF_SCREEN_HEIGHT))
+                    self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(x,y))
+                    #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(self.cutscene_timer*16-1120-HALF_SCREEN_WIDTH,self.cutscene_timer*-48+5760-HALF_SCREEN_HEIGHT))
                 elif self.cutscene_timer >= 20:
                     x = 740 + (540-740) * (self.cutscene_timer - 100)/ (20-100)-HALF_SCREEN_WIDTH
                     y = 405 + (555-405) * (self.cutscene_timer - 100)/ (20-100)-HALF_SCREEN_HEIGHT
-                    self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(x,y))
-                    #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(0,0))
+                    self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(x,y))
+                    #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(0,0))
                 else:
                     x = 540 + 2*(320-540) * (self.cutscene_timer - 20)/ (0-20)-HALF_SCREEN_WIDTH
                     y = 555 + 2*(960-555) * (self.cutscene_timer - 20)/ (0-20)-HALF_SCREEN_HEIGHT
-                    self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(x,y))
-                    #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_Width, SCREEN_HEIGHT)),(self.cutscene_timer*16+480-HALF_SCREEN_WIDTH,self.cutscene_timer*-48+960-HALF_SCREEN_HEIGHT))
+                    self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(x,y))
+                    #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(self.cutscene_timer*16+480-HALF_SCREEN_WIDTH,self.cutscene_timer*-48+960-HALF_SCREEN_HEIGHT))
                 if self.cutscene_timer == 0:
                     self.in_cutscene = 0
 
@@ -524,12 +529,12 @@ class main_game:
                 pygame.draw.circle(tran_surf,(255,255,255),(self.display.get_width()//4,self.display.get_height()//4),(30-abs(self.transition))*8)
                 tran_surf.set_colorkey((255,255,255))
                 self.display.blit(tran_surf,(0,0)) 
-                self.screen.blit(pygame.transform.scale(self.display, (2*SCREEN_Width, 2*SCREEN_HEIGHT)), (0,0)) 
+                self.screen.blit(pygame.transform.scale(self.display, (2*SCREEN_WIDTH, 2*SCREEN_HEIGHT)), (0,0)) 
 
 
             if self.pause:
                 #pause screen: blit a half transparent black screen
-                pause_screen = pygame.Surface((SCREEN_Width, SCREEN_HEIGHT), pygame.SRCALPHA)
+                pause_screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
                 pause_screen.fill((0, 0, 0, 128))  # RGBA: (0, 0, 0, 128) for half transparency
                 self.screen.blit(pause_screen, (0, 0))
                 self.pause_select = 0
@@ -548,21 +553,21 @@ class main_game:
         pygame.mixer.music.play(-1)
         while True:
             #blit the title screen and scale it to the screen size
-            self.screen.blit(pygame.transform.scale(self.assets["title_screen"], (SCREEN_Width, SCREEN_HEIGHT)),(0,0))
+            self.screen.blit(pygame.transform.scale(self.assets["title_screen"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(0,0))
             self.clock.tick(FPS)
+            #blit a half transparent background for the button
+            button_bg = self.assets["button_background"].copy()
+            button_bg.set_alpha(128)  # Set transparency level (0-255)
+            self.screen.blit(pygame.transform.scale(button_bg,(500,1000)), (45, 100))
             #blit the buttons
             if self.title_select[0]:
-                #blit a half transparent background for the button
-                button_bg = self.assets["button_background"].copy()
-                button_bg.set_alpha(128)  # Set transparency level (0-255)
-                self.screen.blit(button_bg, (90, 300))
-                self.screen.blit(self.assets["title_start_selected"],(90,300))
+                self.screen.blit(pygame.transform.scale(self.assets["title_start_selected"],(450,450)),(70,300))
             else:
-                self.screen.blit(self.assets["title_start"],(90,300))
+                self.screen.blit(pygame.transform.scale(self.assets["title_start"],(450,450)),(70,300))
             if self.title_select[2]:
-                self.screen.blit(self.assets["title_setting_selected"],(90,420))
+                self.screen.blit(pygame.transform.scale(self.assets["title_setting_selected"],(450,450)),(70,420))
             else:
-                self.screen.blit(self.assets["title_setting"],(90,420))
+                self.screen.blit(pygame.transform.scale(self.assets["title_setting"],(450,450)),(70,420))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()

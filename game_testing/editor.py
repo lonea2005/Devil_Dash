@@ -1,15 +1,15 @@
 import pygame
 import pygame.joystick
 import sys
-from script.utils import load_images, load_tile, load_image
+from script.utils import load_fix_tile, load_tile, load_image
 from script.tilemap import Tilemap, small_tile
 
 RENDER_SCALE = 2
 
 #constantsx
-SCREEN_Width = 640
+SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
-HALF_SCREEN_WIDTH = SCREEN_Width // 2
+HALF_SCREEN_WIDTH = SCREEN_WIDTH // 2
 HALF_SCREEN_HEIGHT = SCREEN_HEIGHT // 2
 FPS = 60
 
@@ -22,8 +22,8 @@ class editor:
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()
 
-        pygame.display.set_caption("Koakuma's Adventure editor")
-        self.screen = pygame.display.set_mode((SCREEN_Width, SCREEN_HEIGHT))
+        pygame.display.set_caption("Devil Dash editor")
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         #放大兩倍
         self.display = pygame.Surface((HALF_SCREEN_WIDTH, HALF_SCREEN_HEIGHT))
 
@@ -33,6 +33,7 @@ class editor:
             "stone" : load_tile("tiles/stone"),
             "grass" : load_tile("tiles/grass"),
             "large_decor" : load_tile("tiles/large_decor"),
+            "block" : load_fix_tile("tiles/block"),
             "background": load_image("background.png"),
             "spawners" : load_tile("tiles/spawners"),
         }
@@ -42,13 +43,14 @@ class editor:
             "stone" : load_tile("tiles/stone"),
             "grass" : load_tile("tiles/grass"),
             "large_decor" : load_tile("tiles/large_decor"),
+            "block" : load_fix_tile("tiles/block"),
             "spawners" : load_tile("tiles/spawners"),
         }
 
         self.movements = [False,False, False, False]
 
         self.tilemap = Tilemap(self)
-        self.tilemap.load("game_testing/1.pickle")
+        self.tilemap.load("game_testing/0.pickle")
         self.camera = [0,0] #camera position = offset of everything
 
         self.tile_list = list(self.editor_assets)
@@ -150,7 +152,7 @@ class editor:
                     if event.key == pygame.K_LSHIFT:
                         self.shift = False
 
-            self.screen.blit(pygame.transform.scale(self.display, (SCREEN_Width, SCREEN_HEIGHT)), (0,0))
+            self.screen.blit(pygame.transform.scale(self.display, (SCREEN_WIDTH, SCREEN_HEIGHT)), (0,0))
             pygame.display.update()
             self.clock.tick(FPS)
 
