@@ -138,6 +138,7 @@ class Player(physics_entity):
         self.jump_count = 2
         self.HP = HP
         self.attack_cool_down = 0    
+        self.attack_animation = 0
         self.inv_time = 0
         self.extra_attack = False
         self.extra_attack_frame = 0
@@ -165,7 +166,7 @@ class Player(physics_entity):
         self.spell_card = spell_card.name if spell_card else "none"
         self.accessory = [accessory[i].name for i in range(len(accessory))]
 
-        #self.accessory = ["巫女的御幣"]
+        self.testing_stats()
 
         if "水晶吊墜" in self.accessory:
             self.max_mana += 10
@@ -183,12 +184,13 @@ class Player(physics_entity):
             pass
         if "巫女的御幣" in self.accessory:
             self.extra_attack = True
-        self.testing_stats()
+        
     
     def testing_stats(self):
         #testing stats goes here
         #self.damage = 100
         #self.weapon = "貪欲的叉勺"
+        #self.accessory = ["巫女的御幣"]
 
         #self.weapon = "反則之書"
         #self.accessory = ["蝙蝠吊墜"]
@@ -210,7 +212,10 @@ class Player(physics_entity):
         if self.check_collision['down']:
             self.air_time = 0
             self.jump_count = 2
-        if self.air_time > 4:
+        if self.attack_animation > 0:
+            self.set_action('attack')
+            self.attack_animation -= 1
+        elif self.air_time > 4:
             self.set_action('jump') 
         elif movement[0] != 0:
             self.set_action('run')
@@ -259,19 +264,22 @@ class Player(physics_entity):
         if self.attack_cool_down == 0:
             self.main_game.sfx['swing'].play()
             self.attack_cool_down = self.max_attack_cool_down
+            self.attack_animation = 20
             if self.weapon == "none":
                 #attack a rect-space area in front of the player
                 #if charge is full, attack will deal additional damage
                 if self.flip:
                     hitbox = pygame.Rect(self.rect().centerx -36,self.rect().centery,28,16)
+                    self.main_game.particles.append(Particle(self.main_game,'slash',(self.rect().centerx -18,self.rect().centery),velocity=[0,0],frame=10))
                 else:
-                    hitbox = pygame.Rect(self.rect().centerx +8,self.rect().centery,28,16)   
+                    hitbox = pygame.Rect(self.rect().centerx +8,self.rect().centery,28,16) 
+                    self.main_game.particles.append(Particle(self.main_game,'slash',(self.rect().centerx +18,self.rect().centery),velocity=[0,0],frame=10,flip=True))  
                 for enemy in self.main_game.enemy_spawners:
                     if hitbox.colliderect(enemy.rect()):
                         enemy.HP -= 1.5*self.damage if self.charge == self.max_charge else self.damage
                         self.charge = min(self.charge+self.charge_per_hit,self.max_charge)
                         self.main_game.sfx['hit'].play()
-                        for i in range(30):
+                        for i in range(10):
                             angle = random.random()*math.pi*2
                             speed = random.random() *5
                             self.main_game.sparks.append(Gold_Flame(enemy.rect().center,angle,2+random.random()))  
@@ -290,20 +298,22 @@ class Player(physics_entity):
             elif self.weapon == "貪欲的叉勺":
                 if self.flip:
                     hitbox = pygame.Rect(self.position[0]-36,self.position[1],28,22)
+                    self.main_game.particles.append(Particle(self.main_game,'slash',(self.rect().centerx -18,self.rect().centery),velocity=[0,0],frame=10))
                 else:
                     hitbox = pygame.Rect(self.position[0]+8,self.position[1],28,22)   
+                    self.main_game.particles.append(Particle(self.main_game,'slash',(self.rect().centerx +18,self.rect().centery),velocity=[0,0],frame=10,flip=True))  
                 for enemy in self.main_game.enemy_spawners:
                     if hitbox.colliderect(enemy.rect()):
                         enemy.HP -= self.damage
                         self.main_game.sfx['hit'].play()
-                        for i in range(30):
+                        for i in range(10):
                             angle = random.random()*math.pi*2
                             speed = random.random() *5
                             self.main_game.sparks.append(Gold_Flame(enemy.rect().center,angle,2+random.random()))  
                             self.main_game.particles.append(Particle(self.main_game,'particle',enemy.rect().center,[math.cos(angle+math.pi)*speed*0.5,math.sin(angle+math.pi)*speed*0.5],frame=random.randint(0,7)))  
                         self.main_game.sparks.append(Gold_Flame(enemy.rect().center, 0, 5+random.random()))
                         self.main_game.sparks.append(Gold_Flame(enemy.rect().center, math.pi, 5+random.random()))
-                for bullet in self.main_game.projectiles:
+                for bullet in self.main_game.projectiles.copy():
                     if hitbox.colliderect(pygame.Rect(bullet[0][0]-4,bullet[0][1]-4,8,8)):
                         self.charge = min(self.charge+self.charge_per_hit,self.max_charge)
                         self.main_game.projectiles.remove(bullet)
@@ -432,7 +442,7 @@ class Enemy(physics_entity):
         self.test_stats()
     
     def test_stats(self):
-        self.HP=25
+        #self.HP=25
         pass
 
     def update(self, movement=(0,0),tilemap=None):
@@ -607,7 +617,7 @@ class Enemy(physics_entity):
         elif self.rect().colliderect(self.main_game.player.rect()) and abs(self.main_game.player.dashing) > 50 and "蝙蝠吊墜" in self.main_game.player.accessory:
             self.HP -= self.main_game.player.damage
             self.main_game.sfx['hit'].play()
-            for i in range(30):
+            for i in range(10):
                 angle = random.random()*math.pi*2
                 speed = random.random() *5
                 self.main_game.sparks.append(Gold_Flame(self.rect().center,angle,2+random.random()))  
@@ -699,7 +709,6 @@ class Enemy(physics_entity):
     def combo(self):
         if self.attack_combo == 1:
             self.action_queue = ["jump()",["empty",30],"frozen_in_air()","air_dash()",["aim_drop",30],"drop_attack()",["land_detect",60],"land_shoot()",["empty",30],["empty_walk",60],300]
-            print("combo 1")
         elif self.attack_combo == 2:
             if random.random() > 0.7:
                 self.action_queue = ["prepare_attack()",["empty",55],"dash()",["empty",10],"frozen_in_air()","normal_shoot()",["empty",20],"normal_shoot()",["empty",20],"normal_shoot()",["empty",20],"normal_shoot()",["empty",140],["empty_walk",60],300]

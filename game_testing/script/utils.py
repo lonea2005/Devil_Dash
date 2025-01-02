@@ -17,6 +17,16 @@ def load_trans_image(path):
     img = pygame.image.load(BASE_IMAGE_PATH + path).convert_alpha()
     return img
 
+def load_trans_scaled_images(path, scale):
+    images = []
+    for img_name in sorted(os.listdir(BASE_IMAGE_PATH + path)):
+        img=load_trans_image(path + "/" + img_name)
+        img=pygame.transform.scale(img, (img.get_width()*scale, img.get_height()*scale))
+        img=pygame.transform.rotate(img, 100)
+        img=pygame.transform.flip(img, False, True)
+        images.append(img)
+    return images
+
 def load_images(path):
     images = []
     for img_name in sorted(os.listdir(BASE_IMAGE_PATH + path)):

@@ -9,7 +9,7 @@ from script.utils import load_image
 from script.utils import load_tile
 from script.utils import load_fix_tile
 from script.utils import load_images
-from script.utils import load_trans_images,load_trans_image
+from script.utils import load_trans_images,load_trans_image,load_trans_scaled_images
 from script.utils import load_sfx
 from script.utils import Animation
 from script.tilemap import Tilemap, small_tile
@@ -46,7 +46,7 @@ class main_game:
         self.title_select = [False,False,False]
 
         self.assets = {
-            "title_screen": load_image("標題畫面.jpg"),
+            "title_screen": load_trans_image("標題畫面.jpg"),
             "title_start": load_trans_image("buttons/start_button.png"),
             "title_start_selected": load_trans_image("buttons/chosen_start_button.png"),
             "title_setting": load_trans_image("buttons/setting_button.png"),
@@ -65,8 +65,10 @@ class main_game:
             "player/idle" : Animation(load_trans_images("entities/player/idle"),duration=10,loop=True),
             "player/run" : Animation(load_trans_images("entities/player/run"),duration=4,loop=True),
             "player/jump" : Animation(load_trans_images("entities/player/jump"),duration=5,loop=True),
+            "player/attack" : Animation(load_trans_images("entities/player/attack"),duration=4,loop=False),
             "particle/leaf" : Animation(load_images("particles/leaf"),duration=20,loop=False),
             "particle/particle" : Animation(load_images("particles/particle"),duration=6,loop=False),
+            "particle/slash" : Animation(load_trans_scaled_images("entities/slash",0.15),duration=4,loop=False),
             "gun" : load_image("gun.png"),
             "projectile" : load_image("projectile.png"),
             "projectile_1": load_image("projectile.png"),
