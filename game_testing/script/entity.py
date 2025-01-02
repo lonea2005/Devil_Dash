@@ -794,7 +794,7 @@ class Enemy(physics_entity):
             if self.flip:
                 self.main_game.sparks.append(Flame((self.rect().center[0]+random.randint(-6,6)-12,self.rect().center[1]-40), -1.5*math.pi, 3+random.random()))
                 #check if player is hit
-                if self.main_game.player.rect().colliderect(pygame.Rect(self.rect().center[0]-12,self.rect().center[1]-40,24,40)):
+                if self.main_game.player.rect().colliderect(pygame.Rect(self.rect().center[0]-36,self.rect().center[1]-40,24,40)):
                     self.main_game.player.take_damage(1)
             else:
                 self.main_game.sparks.append(Flame((self.rect().center[0]+random.randint(-6,6)+12,self.rect().center[1]-40), -1.5*math.pi, 3+random.random()))

@@ -262,9 +262,9 @@ class main_game:
                 if self.dead > 40:
                     self.load_level(False)
 
-            self.camera[0] += (self.player.rect().centerx - self.display.get_width()/2 -self.camera[0])/20 #camera follow player x
-            self.camera[0] = min(self.min_max_camera[0],self.camera[0])
-            self.camera[0] = max(self.min_max_camera[1],self.camera[0])
+            self.camera[0] += (self.player.rect().centerx - self.display.get_width()/4 -self.camera[0])/20 #camera follow player x
+            self.camera[0] = max(self.min_max_camera[0],self.camera[0])
+            self.camera[0] = min(self.min_max_camera[1],self.camera[0])
             #self.camera[1] += (self.player.rect().centery - self.display.get_height()/2 - self.camera[1])/20 #camera follow player y
             self.render_camera = [int(self.camera[0]), int(self.camera[1])]
 
@@ -560,7 +560,7 @@ class main_game:
             #blit a half transparent background for the button
             button_bg = self.assets["button_background"].copy()
             button_bg.set_alpha(128)  # Set transparency level (0-255)
-            self.screen.blit(pygame.transform.scale(button_bg,(500,1000)), (45, 100))
+            self.screen.blit(pygame.transform.scale(button_bg,(650,650)), (-30, 350))
             #blit the buttons
             if self.title_select[0]:
                 self.screen.blit(pygame.transform.scale(self.assets["title_start_selected"],(450,450)),(70,300))
