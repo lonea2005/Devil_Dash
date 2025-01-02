@@ -25,7 +25,7 @@ GEAR_DATA = {
         (accessory.name, accessory.discription, "images/心型吊墜.png") if accessory.name == "心型吊墜" else
         (accessory.name, accessory.discription, "images/亡靈提燈.png") if accessory.name == "亡靈提燈" else
         (accessory.name, accessory.discription, "images/accessory04.png") if accessory.name == "蝙蝠吊墜" else
-        #(accessory.name, accessory.discription, "images/銀製匕首.png") if accessory.name == "銀製匕首" else
+        (accessory.name, accessory.discription, "images/銀製匕首.png") if accessory.name == "銀製匕首" else
         (accessory.name, accessory.discription, "images/斷線的人偶.png") if accessory.name == "斷線的人偶" else
         (accessory.name, accessory.discription, "images/神社的符咒.png") if accessory.name == "神社的符咒" else
         (accessory.name, accessory.discription, "images/巫女的御幣.png") if accessory.name == "巫女的御幣" else
@@ -38,7 +38,7 @@ class GearSelectorApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("裝備選擇介面")
-        self.geometry("1000x600")
+        self.geometry("1280x960")
 
         # 打印当前工作目录
         print(f"Current working directory: {os.getcwd()}")
@@ -47,13 +47,9 @@ class GearSelectorApp(tk.Tk):
         self.categories = list(GEAR_DATA.keys())  # 裝備分類列表
         self.current_category_index = 0  # 當前分類的索引（初始為第一類）
         self.current_item_index = 0  # 當前分類中的焦點索引（初始為第一個項目）
-        self.selected_indices = {cat: None for cat in self.categories}  # 每個分類的選擇結果
+        # 修改 __init__ 方法中的 selected_indices 初始化
+        self.selected_indices = {cat: [] if cat == "配件" else None for cat in self.categories}  # 每個分類的選擇結果
         self.on_complete_selection = False  # 是否移動到完成選擇的狀態
-
-        # 建立主視窗框架
-        # 在 __init__ 方法中，调整布局
-        self.bottom_frame = tk.Frame(self, height=50, bg="white")  # 创建底部框架
-        self.bottom_frame.pack(side="bottom", fill="x")
 
         self.main_frame = tk.Frame(self)
         self.main_frame.pack(side="top", fill="both", expand=True)
@@ -88,9 +84,11 @@ class GearSelectorApp(tk.Tk):
         self.bind("<Up>", self.navigate_up)
         self.bind("<Down>", self.navigate_down)
         self.bind("<Return>", self.select_item_or_complete)
+        # 在 __init__ 方法中，移除“選擇完成”按钮相关代码，并绑定 Q 键
+        self.bind("q", self.finish_selection)
 
         # 窗口大小调整时更新“選擇完成”按钮的位置
-        self.bind("<Configure>", self.update_complete_button_position)
+        #self.bind("<Configure>", self.update_complete_button_position)
 
     def create_widgets(self):
         """
@@ -102,19 +100,19 @@ class GearSelectorApp(tk.Tk):
         for category_index, category in enumerate(self.categories):
             frame = tk.Frame(self.scrollable_frame)
             frame.grid(row=category_index, column=0, pady=20, sticky="w")
-            tk.Label(frame, text=category, font=("Arial", 16)).grid(row=0, column=0, sticky="w")
+            tk.Label(frame, text=category, font=("Arial", 25)).grid(row=0, column=0, sticky="w")
             self.gear_frames[category] = frame
             self.gear_labels[category] = []
 
             for i, (name, desc, img_path) in enumerate(GEAR_DATA[category]):
-                label = tk.Label(frame, text=name, font=("Arial", 12), borderwidth=2, relief="groove", compound="top")
+                label = tk.Label(frame, text=name, font=("Arial", 16), borderwidth=2, relief="groove", compound="top")
                 label.grid(row=1, column=i, padx=10)
 
                 # 加載圖片
                 if os.path.exists(img_path):
                     try:
                         # 调整图片大小
-                        img = Image.open(img_path).resize((150, 150))  # 在这里调整图片大小
+                        img = Image.open(img_path).resize((200, 200))  # 在这里调整图片大小
                         photo = ImageTk.PhotoImage(img)
                         label.config(image=photo, text=name, compound="top", borderwidth=1, relief="solid")  # 在这里调整图片外框
                         label.image = photo  # 防止垃圾回收
@@ -124,21 +122,11 @@ class GearSelectorApp(tk.Tk):
                     print(f"Image path does not exist: {img_path}")
                 self.gear_labels[category].append(label)
 
-        # 在最後一行添加 "選擇完成"
-        self.complete_label = tk.Label(self.bottom_frame, text="選擇完成", font=("Arial", 20),
-                               borderwidth=2, relief="groove", width=20, height=2, bg="gray")
-        self.complete_label.pack(pady=10)  # 将按钮放置在底部框架中
-
         # 初始化顯示
         self.update_display()
         self.update_summary()
 
-    def update_complete_button_position(self, event=None):
-        """
-        更新“選擇完成”按钮的位置，使其始终位于窗口底部的中间
-        """
-        self.complete_label.place(relx=0.5, rely=1.0, anchor="s")
-
+    # 修改 update_display 方法中的已選擇項目顯示邏輯
     def update_display(self):
         """
         更新右側顯示，包括當前焦點高亮顯示和完成選擇的狀態
@@ -148,16 +136,10 @@ class GearSelectorApp(tk.Tk):
                 # 當前焦點高亮
                 if category_index == self.current_category_index and i == self.current_item_index and not self.on_complete_selection:
                     label.config(bg="lightblue", fg="black")
-                elif i == self.selected_indices[category]:
+                elif (category == "配件" and i in self.selected_indices[category]) or (category != "配件" and i == self.selected_indices[category]):
                     label.config(bg="green", fg="white")  # 已選擇項目
                 else:
                     label.config(bg="gray", fg="white")  # 其他狀態
-
-        # 更新 "選擇完成" 的顏色
-        if self.on_complete_selection:
-            self.complete_label.config(bg="lightblue", fg="black")
-        else:
-            self.complete_label.config(bg="gray", fg="white")
 
         # 確保滾動範圍更新正確
         self.main_canvas.yview_moveto(min(max(self.current_category_index / len(self.categories), 0), 1))
@@ -171,6 +153,7 @@ class GearSelectorApp(tk.Tk):
         # 更新左侧摘要
         self.update_summary()
 
+    # 修改 update_summary 方法中的摘要顯示邏輯
     def update_summary(self):
         """
         更新左側摘要區域，顯示當前選擇的裝備
@@ -178,24 +161,31 @@ class GearSelectorApp(tk.Tk):
         for widget in self.left_frame.winfo_children():
             widget.destroy()
 
-        tk.Label(self.left_frame, text="選擇摘要", font=("Arial", 20), bg="white", wraplength=280).pack(anchor="n", pady=10)  # 在这里设置 wraplength 以确保文本换行
+        tk.Label(self.left_frame, text="選擇摘要", font=("Arial", 25), bg="white", wraplength=280).pack(anchor="n", pady=10)  # 在这里设置 wraplength 以确保文本换行
 
         for category in self.categories:
-            selected_idx = self.selected_indices[category]
-            if selected_idx is None:
-                summary = f"{category}: 無"
+            selected_indices = self.selected_indices[category]
+            if selected_indices is None or (category == "配件" and not selected_indices):
+                summary = "無"
             else:
-                name, desc, img_path = GEAR_DATA[category][selected_idx]
-                summary = f"{category}: {name}\n{desc}"
-            tk.Label(self.left_frame, text=summary, bg="white", font=("Arial", 16), justify="left", wraplength=280).pack(anchor="w", pady=20)  # 在这里设置 wraplength 以确保文本换行
+                if category == "配件":
+                    summary = ", ".join([GEAR_DATA[category][idx][0] for idx in selected_indices])
+                else:
+                    summary = GEAR_DATA[category][selected_indices][0]
+            
+            # 添加类别标签，并单独设置字体大小
+            tk.Label(self.left_frame, text=f"{category}:", bg="white", font=("Arial", 20, "bold"), justify="left", wraplength=280).pack(anchor="w", pady=(20, 0))
+            tk.Label(self.left_frame, text=summary, bg="white", font=("Arial", 16), justify="left", wraplength=280).pack(anchor="w", pady=(0, 20))  # 在这里设置 wraplength 以确保文本换行
 
-        # 添加当前焦点装备的说明
+        # 修改 update_summary 方法中的当前焦点装备的说明部分
         current_category = self.categories[self.current_category_index]
         current_item = GEAR_DATA[current_category][self.current_item_index]
         current_name, current_desc, current_img_path = current_item
-        current_summary = f"裝備說明: {current_name}\n{current_desc}"
-        tk.Label(self.left_frame, text=current_summary, bg="white", font=("Arial", 16), justify="left", wraplength=280).pack(anchor="w", pady=40)  # 在这里设置 wraplength 以确保文本换行            
-
+        # 添加“裝備說明:”的标签，并单独设置字体大小
+        tk.Label(self.left_frame, text="裝備說明:", bg="white", font=("Arial", 20, "bold"), justify="left", wraplength=280).pack(anchor="w", pady=(20, 0))
+        current_summary = f"{current_name}\n{current_desc}"
+        tk.Label(self.left_frame, text=current_summary, bg="white", font=("Arial", 16), justify="left", wraplength=280).pack(anchor="w", pady=(0, 20))    
+    
     def navigate_left(self, event):
         """
         左鍵：移動到前一個裝備
@@ -214,54 +204,71 @@ class GearSelectorApp(tk.Tk):
         self.update_display()
 
     def navigate_up(self, event):
-        """
-        上鍵：移動到上一個分類或完成按鈕
-        """
-        if self.on_complete_selection:
-            self.on_complete_selection = False
-        else:
-            self.current_category_index = max(self.current_category_index - 1, 0)
-            self.current_item_index = 0  # 預設回到第一個裝備
+        self.current_category_index = max(self.current_category_index - 1, 0)
+        self.current_item_index = 0
         self.update_display()
 
     def navigate_down(self, event):
-        """
-        下鍵：移動到下一個分類或完成按鈕
-        """
-        if self.current_category_index == len(self.categories) - 1:
-            self.on_complete_selection = True
-        elif self.on_complete_selection:
-            self.on_complete_selection = False
-        else:
-            self.current_category_index = min(self.current_category_index + 1, len(self.categories) - 1)
-            self.current_item_index = 0  # 預設回到第一個裝備
+        self.current_category_index = min(self.current_category_index + 1, len(self.categories) - 1)
+        self.current_item_index = 0
         self.update_display()
 
+    # 修改 select_item_or_complete 方法
     def select_item_or_complete(self, event):
-        """
-        按下 Enter 鍵：選擇當前裝備或完成選擇
-        """
-        if self.on_complete_selection:
-            self.finish_selection()
+        category = self.categories[self.current_category_index]
+        if category == "配件":
+            if self.current_item_index in self.selected_indices[category]:
+                # 如果当前选择的配件已经被选中，再次按下 Enter 取消选择
+                self.selected_indices[category].remove(self.current_item_index)
+            else:
+                # 否则，选择当前配件
+                self.selected_indices[category].append(self.current_item_index)
         else:
-            category = self.categories[self.current_category_index]
-            self.selected_indices[category] = self.current_item_index
-            self.update_display()
-            self.update_summary()
+            # 对于其他类别，只能选择一个
+            if self.selected_indices[category] == self.current_item_index:
+                # 如果当前选择的装备已经被选中，再次按下 Enter 取消选择
+                self.selected_indices[category] = None
+            else:
+                # 否则，选择当前装备
+                self.selected_indices[category] = self.current_item_index
+        self.update_display()
+        self.update_summary()
 
-    def finish_selection(self):
+    def finish_selection(self, event=None):
         """
         完成選擇，檢查是否每類裝備都有選擇，並顯示結果
         """
-        if any(idx is None for idx in self.selected_indices.values()):
-            messagebox.showwarning("未完成", "請選擇每一類裝備！")
-            return
+        for category, selected in self.selected_indices.items():
+            if category == "配件":
+                if not selected:  # 如果配件类别没有选择任何项
+                    messagebox.showwarning("未完成", "請選擇每一類裝備！")
+                    return
+            else:
+                if selected is None:  # 如果其他类别没有选择任何项
+                    messagebox.showwarning("未完成", "請選擇每一類裝備！")
+                    return
 
-        result = "\n".join([f"{cat}: {GEAR_DATA[cat][idx][0]}" for cat, idx in self.selected_indices.items()])
+        result = ""
+        selected_items = {}
+        for category, selected in self.selected_indices.items():
+            if category == "配件":
+                selected_items[category] = [GEAR_DATA[category][idx][0] for idx in selected]
+                selected_items_str = ", ".join(selected_items[category])
+                result += f"{category}: {selected_items_str}\n"
+            else:
+                selected_items[category] = GEAR_DATA[category][selected][0]
+                result += f"{category}: {selected_items[category]}\n"
+
         messagebox.showinfo("選擇完成", f"你的選擇如下：\n{result}")
         self.destroy()
+        return selected_items
 
 
-if __name__ == "__main__":
+def main():
     app = GearSelectorApp()
     app.mainloop()
+    return app.selected_indices
+
+if __name__ == "__main__":
+    selected_items = main()
+    print("Selected items:", selected_items)
