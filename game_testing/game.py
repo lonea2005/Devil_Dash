@@ -63,12 +63,13 @@ class main_game:
             "enemy/idle" : Animation(load_images("entities/enemy/idle"),duration=6,loop=True),
             "enemy/run" : Animation(load_images("entities/enemy/run"),duration=4,loop=True),
             "player/idle" : Animation(load_trans_images("entities/player/idle"),duration=10,loop=True),
-            "player/run" : Animation(load_trans_images("entities/player/run"),duration=4,loop=True),
+            "player/run" : Animation(load_trans_images("entities/player/run"),duration=10,loop=True),
             "player/jump" : Animation(load_trans_images("entities/player/jump"),duration=5,loop=True),
             "player/attack" : Animation(load_trans_images("entities/player/attack"),duration=4,loop=False),
             "particle/leaf" : Animation(load_images("particles/leaf"),duration=20,loop=False),
             "particle/particle" : Animation(load_images("particles/particle"),duration=6,loop=False),
             "particle/slash" : Animation(load_trans_scaled_images("entities/slash",0.15),duration=4,loop=False),
+            "particle/hp" : Animation(load_images("particles/hp"),duration=10,loop=False),
             "gun" : load_image("gun.png"),
             "projectile" : load_image("projectile.png"),
             "projectile_1": load_image("projectile.png"),
@@ -502,13 +503,15 @@ class main_game:
             self.display_for_outline.blit(self.display, (0,0))
             self.screen.blit(pygame.transform.scale(self.display_for_outline, (2*SCREEN_WIDTH, 2*SCREEN_HEIGHT)), self.screen_shake_offset) 
             #blit self.display_entity to screen without scaling
-            if not self.dead and abs(self.player.dashing) < 50:
+            #if not self.dead and abs(self.player.dashing) < 50:
+            if not self.dead :
                 self.player.render_new(self.screen,offset=self.render_camera) #render player
 
             if self.cutscene_timer > 0:    
                 self.cutscene_timer -= 1
                 if self.cutscene_timer >= 100:
                     #if self.cutscene_timer > 100
+                    self.cutscene_timer -= 1
                     x = 960 + (740-960) * (self.cutscene_timer - 120)/ (100-120)-HALF_SCREEN_WIDTH
                     y = 0 + (405-0) * (self.cutscene_timer - 120)/ (100-120)-HALF_SCREEN_HEIGHT
                     self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(x,y))
@@ -519,6 +522,7 @@ class main_game:
                     self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(x,y))
                     #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(0,0))
                 else:
+                    self.cutscene_timer -= 1
                     x = 540 + 2*(320-540) * (self.cutscene_timer - 20)/ (0-20)-HALF_SCREEN_WIDTH
                     y = 555 + 2*(960-555) * (self.cutscene_timer - 20)/ (0-20)-HALF_SCREEN_HEIGHT
                     self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(x,y))

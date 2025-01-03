@@ -129,7 +129,7 @@ class physics_entity:
         surface.blit(pygame.transform.flip(self.anim.img(),self.flip,False),(self.position[0]-offset[0]+self.anim_offset[0],self.position[1]-offset[1]+self.anim_offset[1]))
         #surface.blit(self.main_game.assets['player'],(self.position[0]-offset[0],self.position[1]-offset[1])    )
     def render_new(self,surface,offset=[0,0]):
-        surface.blit(pygame.transform.scale(pygame.transform.flip(self.anim.img(),not self.flip,False),(56,70)),(4*int(self.position[0]-offset[0]+self.anim_offset[0]),4*int(self.position[1]-offset[1]+self.anim_offset[1])))
+        surface.blit(pygame.transform.scale(pygame.transform.flip(self.anim.img(),not self.flip,False),(56,70)),(4*int(self.position[0]-offset[0]+self.anim_offset[0]),4*int(self.position[1]-offset[1]+self.anim_offset[1]+1))) #+1 for visually reg
 
 class Player(physics_entity):
     def __init__(self,main_game,position,size,HP,weapon=None,spell_card=None,accessory=[]):     
@@ -347,9 +347,9 @@ class Player(physics_entity):
                 for i in range(30):
                     #add leaf particle arround the player
                     angle = random.random()*math.pi*2
-                    speed = random.random() *5
+                    speed = random.random() *3
                     #self.main_game.sparks.append(Flexible_Spark(self.rect().center,angle,2+random.random(),(0,255,0)))
-                    self.main_game.particles.append(Particle(self.main_game,'particle',self.rect().center,[math.cos(angle+math.pi)*speed*0.5,math.sin(angle+math.pi)*speed*0.5],frame=random.randint(0,7)))
+                    self.main_game.particles.append(Particle(self.main_game,'hp',(self.rect().centerx+random.randint(-10,10),self.rect().centery+random.randint(-3,3)),[math.cos(angle+math.pi)*speed*0.5*0,-1*abs(math.sin(angle+math.pi)*speed*0.5)],frame=random.randint(0,7)))
 
                 #self.main_game.sfx['heal'].play()
                 self.HP = min(self.HP+1,6)
