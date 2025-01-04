@@ -45,6 +45,13 @@ def load_tile(path):
         images.append(load_image(path + "/" + img_name))
     return images
 
+def load_trans_tile(path):
+    images = []
+    for img_name in sorted(os.listdir(BASE_IMAGE_PATH + path)):
+        images.append(load_trans_image(path + "/" + img_name))
+    return images
+
+
 def load_fix_tile(path):
     images = []
     for img_name in sorted(os.listdir(BASE_IMAGE_PATH + path)):

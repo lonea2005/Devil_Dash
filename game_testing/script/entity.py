@@ -69,10 +69,11 @@ class physics_entity:
         self.size = size
         self.velocity = [0,0]
         self.dashing = 0
+        self.jumping = False
 
         #Animation
         self.action = ''
-        self.anim_offset = (-3,-3) #避免動畫比原本圖片大所以預留空間
+        self.anim_offset = (-5,-10) #避免動畫比原本圖片大所以預留空間
         self.flip = False
         self.set_action('idle')
 
@@ -114,6 +115,7 @@ class physics_entity:
                 if frame_movement[1] > 0:
                     entity_rect.bottom = rect.top
                     self.check_collision['down'] = True
+                    self.jumping = False
                 if frame_movement[1] < 0:
                     entity_rect.top = rect.bottom
                     self.check_collision['up'] = True
@@ -129,7 +131,12 @@ class physics_entity:
         surface.blit(pygame.transform.flip(self.anim.img(),self.flip,False),(self.position[0]-offset[0]+self.anim_offset[0],self.position[1]-offset[1]+self.anim_offset[1]))
         #surface.blit(self.main_game.assets['player'],(self.position[0]-offset[0],self.position[1]-offset[1])    )
     def render_new(self,surface,offset=[0,0]):
-        surface.blit(pygame.transform.scale(pygame.transform.flip(self.anim.img(),not self.flip,False),(56,70)),(4*int(self.position[0]-offset[0]+self.anim_offset[0]),4*int(self.position[1]-offset[1]+self.anim_offset[1]+1))) #+1 for visually reg
+        if self.entity_type == "player" or self.type == "boss":
+            surface.blit(pygame.transform.scale(pygame.transform.flip(self.anim.img(),not self.flip,False),(80,100)),(4*int(self.position[0]-offset[0]+self.anim_offset[0]),4*int(self.position[1]-offset[1]+self.anim_offset[1]+1))) #+1 for visually reg
+            #surface.blit(pygame.transform.scale(pygame.transform.flip(self.anim.img(),not self.flip,False),(56,70)),(4*int(self.position[0]-offset[0]+self.anim_offset[0]),4*int(self.position[1]-offset[1]+self.anim_offset[1]+1))) #+1 for visually reg
+        elif self.entity_type == "dummy":
+            surface.blit(pygame.transform.scale(pygame.transform.flip(self.anim.img(),not self.flip,False),(80,100)),(4*int(self.position[0]-offset[0]+self.anim_offset[0]),4*int(self.position[1]-offset[1]+self.anim_offset[1]+1)))
+
 
 class Player(physics_entity):
     def __init__(self,main_game,position,size,HP,weapon=None,spell_card=None,accessory=[]):     
@@ -188,7 +195,7 @@ class Player(physics_entity):
     
     def testing_stats(self):
         #testing stats goes here
-        #self.damage = 100
+        self.damage = 100
         #self.weapon = "貪欲的叉勺"
         #self.accessory = ["巫女的御幣"]
 
@@ -276,7 +283,7 @@ class Player(physics_entity):
                     self.main_game.particles.append(Particle(self.main_game,'slash',(self.rect().centerx +18,self.rect().centery),velocity=[0,0],frame=10,flip=True))  
                 for enemy in self.main_game.enemy_spawners:
                     if hitbox.colliderect(enemy.rect()):
-                        enemy.HP -= 1.5*self.damage if self.charge == self.max_charge else self.damage
+                        enemy.HP -= 1.5*self.damage if self.charge_effect else self.damage
                         self.charge = min(self.charge+self.charge_per_hit,self.max_charge)
                         self.main_game.sfx['hit'].play()
                         for i in range(10):
@@ -401,6 +408,7 @@ class Player(physics_entity):
 class Enemy(physics_entity):
     def __init__(self,main_game,position,size,phase=1,action_queue=[]):
         super().__init__(main_game,'enemy',position,size)
+        self.type='boss'
         self.flip = True
         self.set_action('idle')
 
@@ -458,6 +466,7 @@ class Enemy(physics_entity):
                 self.velocity[1] = min(7,self.velocity[1]+0.1) #gravity
             if len(self.action_queue)>0 and isinstance(self.action_queue[0],int):
                 self.action_queue[0] -= 1
+                self.jumping = False
                 if self.action_queue[0] == 0:
                     self.action_queue.pop(0)
                     self.p1_shoot_count = 0
@@ -624,9 +633,12 @@ class Enemy(physics_entity):
                 self.main_game.particles.append(Particle(self.main_game,'particle',self.rect().center,[math.cos(angle+math.pi)*speed*0.5,math.sin(angle+math.pi)*speed*0.5],frame=random.randint(0,7)))  
             if self.HP <= 0:
                 return True
-
-        if abs(movement[0]) > 0:
+        if self.dashing_towards_player or self.furiously_dashing or self.air_dashing or self.dashing:
+            self.set_action('dash')
+        elif abs(movement[0]) > 0:
             self.set_action('run')
+        elif self.jumping:
+            self.set_action('jump')
         else:
             self.set_action('idle') 
 
@@ -651,6 +663,7 @@ class Enemy(physics_entity):
                 self.main_game.sparks.append(Flexible_Spark(self.rect().center,angle,2+random.random(),color_code))
     def dash(self):
         #boss will move towards player's direction at a high speed for a short duration
+        self.dashing = True
         distance = self.check_player_pos()  
         if distance[0] > 0:
             self.velocity[0] = 5
@@ -718,6 +731,7 @@ class Enemy(physics_entity):
 
     def frozen_in_air(self):
         self.velocity = [0,0]
+        self.dashing = False
         self.froze_in_air = True
         #if collision with ground, stop the action
         if self.check_collision['down']:
@@ -858,49 +872,43 @@ class Enemy(physics_entity):
 
 
 
+class Beam(physics_entity):
+    def __init__(self,main_game,position,size,velocity=[0,0],duration=0):
+        super().__init__(main_game,'beam',position,size)
+        self.duration = duration
+        self.velocity = velocity
+        self.anim_offset = [0,0]
+        self.type = 'beam'
+        
 
-
-
-
-
-
-class Boss(physics_entity):
-    def __init__(self,main_game,position,size):
-        super().__init__(main_game,"boss",position,size)
-        self.HP = 10
-        self.set_action('idle')
-    def update(self, movement=(0,0),tilemap=None):
+    def update(self,movement=(0,0),tilemap=None):
+        self.duration -= 1
+        if self.duration == 0:
+            return True
         super().update(movement,tilemap)
-        pass
+        if self.rect().colliderect(self.main_game.player.rect()) and abs(self.main_game.player.dashing) < 50: 
+            self.main_game.player.take_damage(1,self.check_player_pos())
+
+    def check_player_pos(self):
+        return list((self.main_game.player.rect().centerx - self.rect().centerx, self.main_game.player.rect().centery - self.rect().centery))
+
     def render(self,surface,offset=[0,0]):
         super().render(surface,offset)
-    def dash(self):
-        #boss will move towards player's direction at a high speed for a short duration
-        distance = (self.main_game.player.rect().centerx - self.rect().centerx, self.main_game.player.rect().centery - self.rect().centery)
-        if distance[0] > 0:
-            self.velocity[0] = 5
-        else:
-            self.velocity[0] = -5
-    def shoot(self):
-        #boss will shoot a projectile towards player's direction
-        distance = (self.main_game.player.rect().centerx - self.rect().centerx, self.main_game.player.rect().centery - self.rect().centery)
-        if distance[0] > 0:
-            self.main_game.projectiles.append([[self.rect().centerx+7,self.rect().centery],1.5,0])
-        else:
-            self.main_game.projectiles.append([[self.rect().centerx-7,self.rect().centery],-1.5,0])
-        for i in range(4):
-            self.main_game.sparks.append(Spark(self.main_game.projectiles[-1][0],random.random()-0.5,2+random.random()+2))
-    def jump(self):
-        #boss will jump and dash towards player's direction
-        self.velocity[1] = -5
-        self.set_action('jump')
-        self.dash()
-        self.drop_attack()
-    def drop_attack(self):
-        #boss will drop down and land, dealing damage to player if player is below
-        self.velocity[1] = 5
-        self.set_action('jump')
-        #spark effect
-        self.main_game.sparks.append(Spark(self.rect().center, 0, 5+random.random()))
-        self.main_game.sparks.append(Spark(self.rect().center, math.pi, 5+random.random()))
+
+
+class Dummy(physics_entity):
+    def __init__(self,main_game,position,size,velocity=[0,0]):
+        super().__init__(main_game,'dummy',position,size)
+        self.anim_offset = [-5,-9]
+        self.HP = 30
+        self.type = 'dummy'
         
+
+    def update(self,movement=(0,0),tilemap=None):
+        super().update(movement,tilemap)
+        self.velocity[1] = min(5,self.velocity[1]+0.1) #gravity
+        if self.HP <= 0:
+            return True
+
+    def render(self,surface,offset=[0,0]):
+        super().render(surface,offset)
