@@ -287,7 +287,9 @@ class main_game:
             #self.camera[1] += (self.player.rect().centery - self.display.get_height()/2 - self.camera[1])/20 #camera follow player y
             self.render_camera = [int(self.camera[0]), int(self.camera[1])]
 
-            if self.in_cutscene == 0:
+            self.tilemap.render(self.display,offset=self.render_camera) #render background
+
+            if self.in_cutscene == 0 and self.cutscene_timer == 0:
                 #tutorial end
                 if self.player.position[0] > 1447 and self.level == -1 and self.win == 0:
                     self.win = 1
@@ -295,7 +297,7 @@ class main_game:
                     if random.random() * 4999 < spawner.width* spawner.height:
                         pos = (spawner.x + random.random()*spawner.width, spawner.y + random.random()*spawner.height-8)
                         self.particles.append(Particle(self,'fire',pos,velocity=[-0.2,0.3],frame=random.randint(0,20)))
-                self.tilemap.render(self.display,offset=self.render_camera) #render background
+                
 
                 for enemy in self.enemy_spawners.copy():
                     kill = enemy.update((0,0),self.tilemap)
@@ -545,9 +547,12 @@ class main_game:
 
             if self.cutscene_timer > 0:    
                 self.cutscene_timer -= 1
+                decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                decrease_light.fill((0, 0, 0, 150))  # RGBA: (0, 0, 0, 128) for half transparency
+                self.screen.blit(decrease_light, (0, 0))
                 if self.cutscene_timer >= 100:
                     #if self.cutscene_timer > 100
-                    self.cutscene_timer -= 1
+                    self.cutscene_timer -= 0
                     x = 960 + (740-960) * (self.cutscene_timer - 120)/ (100-120)-HALF_SCREEN_WIDTH
                     y = 0 + (405-0) * (self.cutscene_timer - 120)/ (100-120)-HALF_SCREEN_HEIGHT
                     self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(x,y))
@@ -620,6 +625,7 @@ class main_game:
                             decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
                             decrease_light.fill((0, 0, 0, 10))  # RGBA: (0, 0, 0, 128) for half transparency
                             self.screen.blit(decrease_light, (0, 0))
+                            pygame.mixer.music.set_volume(0.3*i/60)
                             self.clock.tick(60)
                             pygame.display.flip()
                         self.load_level()
@@ -633,6 +639,7 @@ class main_game:
                             decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
                             decrease_light.fill((0, 0, 0, 10))  # RGBA: (0, 0, 0, 128) for half transparency
                             self.screen.blit(decrease_light, (0, 0))
+                            pygame.mixer.music.set_volume(0.3*(60-i)/60)
                             self.clock.tick(60)
                             pygame.display.flip()
                         self.load_level()

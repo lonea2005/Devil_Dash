@@ -195,7 +195,7 @@ class Player(physics_entity):
     
     def testing_stats(self):
         #testing stats goes here
-        self.damage = 100
+        #self.damage = 100
         #self.weapon = "貪欲的叉勺"
         #self.accessory = ["巫女的御幣"]
 
@@ -282,7 +282,7 @@ class Player(physics_entity):
                     hitbox = pygame.Rect(self.rect().centerx +8,self.rect().centery,28,16) 
                     self.main_game.particles.append(Particle(self.main_game,'slash',(self.rect().centerx +18,self.rect().centery),velocity=[0,0],frame=10,flip=True))  
                 for enemy in self.main_game.enemy_spawners:
-                    if hitbox.colliderect(enemy.rect()):
+                    if hitbox.colliderect(enemy.rect()) and enemy.type != 'beam':
                         enemy.HP -= 1.5*self.damage if self.charge_effect else self.damage
                         self.charge = min(self.charge+self.charge_per_hit,self.max_charge)
                         self.main_game.sfx['hit'].play()
@@ -878,8 +878,7 @@ class Beam(physics_entity):
         self.duration = duration
         self.velocity = velocity
         self.anim_offset = [0,0]
-        self.type = 'beam'
-        
+        self.type = 'beam'        
 
     def update(self,movement=(0,0),tilemap=None):
         self.duration -= 1
