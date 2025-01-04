@@ -1,7 +1,7 @@
 import pygame
 import pygame.joystick
 import sys
-from script.utils import load_fix_tile, load_tile, load_image
+from script.utils import load_fix_tile, load_tile, load_image, load_trans_tile
 from script.tilemap import Tilemap, small_tile
 
 RENDER_SCALE = 2
@@ -32,7 +32,7 @@ class editor:
             "decor" : load_tile("tiles/decor"),
             "stone" : load_tile("tiles/stone"),
             "grass" : load_tile("tiles/grass"),
-            "large_decor" : load_tile("tiles/large_decor"),
+            "large_decor" : load_trans_tile("tiles/large_decor"),
             "block" : load_fix_tile("tiles/block"),
             "background": load_image("background.png"),
             "spawners" : load_tile("tiles/spawners"),
@@ -50,7 +50,7 @@ class editor:
         self.movements = [False,False, False, False]
 
         self.tilemap = Tilemap(self)
-        self.tilemap.load("game_testing/0.pickle")
+        self.tilemap.load("game_testing/tilemap.pickle")
         self.camera = [0,0] #camera position = offset of everything
 
         self.tile_list = list(self.editor_assets)

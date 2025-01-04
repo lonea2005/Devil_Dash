@@ -4,9 +4,9 @@ import sys
 import os
 import random
 import math
-from script.entity import physics_entity, Player, Enemy, Diagnal_Projectile
+from script.entity import Player, Enemy, Beam, Dummy
 from script.utils import load_image
-from script.utils import load_tile
+from script.utils import load_tile,load_trans_tile
 from script.utils import load_fix_tile
 from script.utils import load_images
 from script.utils import load_trans_images,load_trans_image,load_trans_scaled_images
@@ -55,18 +55,23 @@ class main_game:
             "decor" : load_tile("tiles/decor"),
             "stone" : load_tile("tiles/stone"),
             "grass" : load_tile("tiles/grass"),
-            "large_decor" : load_tile("tiles/large_decor"),
+            "large_decor" : load_trans_tile("tiles/large_decor"),
             "block" : load_fix_tile("tiles/block"),
             "player": load_image("entities/player.png"),
             #"background": load_image("background.png"),
             "background": load_image("back.png"),
-            "enemy/idle" : Animation(load_images("entities/enemy/idle"),duration=6,loop=True),
-            "enemy/run" : Animation(load_images("entities/enemy/run"),duration=4,loop=True),
+            "enemy/idle" : Animation(load_trans_images("entities/enemy/idle"),duration=6,loop=True),
+            "enemy/run" : Animation(load_trans_images("entities/enemy/run"),duration=4,loop=True),
+            "enemy/jump" : Animation(load_trans_images("entities/enemy/jump"),duration=5,loop=True),
+            "enemy/dash" : Animation(load_trans_images("entities/enemy/dash"),duration=4,loop=False),
+            "beam/idle" : Animation(load_trans_images("entities/beam"),duration=5,loop=True),
+            "dummy/idle" : Animation(load_trans_images("entities/dummy/idle"),duration=6,loop=True),
             "player/idle" : Animation(load_trans_images("entities/player/idle"),duration=10,loop=True),
             "player/run" : Animation(load_trans_images("entities/player/run"),duration=10,loop=True),
             "player/jump" : Animation(load_trans_images("entities/player/jump"),duration=5,loop=True),
             "player/attack" : Animation(load_trans_images("entities/player/attack"),duration=4,loop=False),
             "particle/leaf" : Animation(load_images("particles/leaf"),duration=20,loop=False),
+            "particle/fire" : Animation(load_images("particles/fire"),duration=10,loop=False),
             "particle/particle" : Animation(load_images("particles/particle"),duration=6,loop=False),
             "particle/slash" : Animation(load_trans_scaled_images("entities/slash",0.15),duration=4,loop=False),
             "particle/hp" : Animation(load_images("particles/hp"),duration=10,loop=False),
@@ -108,7 +113,7 @@ class main_game:
         self.sfx["got_hit"].set_volume(1)
 
 
-        self.level = 0
+        self.level = -1
 
     def load_level(self,new_level=True):
         self.pause = False
@@ -127,7 +132,7 @@ class main_game:
         self.buffer = []    
 
         self.camera = [0,0] #camera position = offset of everything
-        self.min_max_camera = [0,0] #min and max camera x position
+        self.min_max_camera = [0,1120] #min and max camera x position
         self.screen_shake_timer = 0
         self.screen_shake_offset = [0,0]
         self.dead = 0 #dead animation
@@ -136,24 +141,37 @@ class main_game:
 
         self.tilemap.load("game_testing/"+str(self.level)+".pickle")
 
-        self.leaf_spawners = []
+        self.fire_spawners = []
 
-        for tree in self.tilemap.extract([('large_decor',2)],keep=True):
-            self.leaf_spawners.append(pygame.Rect(4+tree.pos[0], 4+tree.pos[1], 23, 13))
+        for fire in self.tilemap.extract([('large_decor',8)],keep=True):
+            self.fire_spawners.append(pygame.Rect(4+fire.pos[0], 4+fire.pos[1], 23, 13))
 
         self.enemy_spawners = []
-        for spawner in self.tilemap.extract([('spawners',0),('spawners',1)],keep=False):
+        for spawner in self.tilemap.extract([('spawners',0),('spawners',1),('spawners',2),('spawners',3)],keep=False):
             if spawner.variant == 0:
                 self.player.position = spawner.pos #player start position
-            else:
+            elif spawner.variant == 1:
                 self.enemy_spawners.append(Enemy(self,spawner.pos,(8,15),phase=1))
+            elif spawner.variant == 2:
+                self.enemy_spawners.append(Beam(self,spawner.pos,(22,144),duration=-1))
+            elif spawner.variant == 3:
+                self.enemy_spawners.append(Dummy(self,spawner.pos,(8,15)))
+
 
         if self.level == 0:
+            self.min_max_camera = [0,0]
             self.transition = -30
         elif self.level == 1:
             self.transition = -50
+        elif self.level == -1:
+            self.transition = -50
         self.win = 0
 
+        if self.level == -1:
+            if new_level:
+                pygame.mixer.music.load("game_testing/data/sfx/music_0.wav")
+                pygame.mixer.music.set_volume(0.2)
+                pygame.mixer.music.play(-1)
         if self.level == 0:
             if new_level:
                 pygame.mixer.music.load("game_testing/data/sfx/music_1.wav")
@@ -270,16 +288,20 @@ class main_game:
             self.render_camera = [int(self.camera[0]), int(self.camera[1])]
 
             if self.in_cutscene == 0:
-                for spawner in self.leaf_spawners:
-                    if random.random() * 49999 < spawner.width* spawner.height:
-                        pos = (spawner.x + random.random()*spawner.width, spawner.y + random.random()*spawner.height)
-                        self.particles.append(Particle(self,'leaf',pos,velocity=[-0.1,0.3],frame=random.randint(0,20)))
+                #tutorial end
+                if self.player.position[0] > 1447 and self.level == -1 and self.win == 0:
+                    self.win = 1
+                for spawner in self.fire_spawners:
+                    if random.random() * 4999 < spawner.width* spawner.height:
+                        pos = (spawner.x + random.random()*spawner.width, spawner.y + random.random()*spawner.height-8)
+                        self.particles.append(Particle(self,'fire',pos,velocity=[-0.2,0.3],frame=random.randint(0,20)))
                 self.tilemap.render(self.display,offset=self.render_camera) #render background
 
                 for enemy in self.enemy_spawners.copy():
                     kill = enemy.update((0,0),self.tilemap)
-                    enemy.render(self.display,offset=self.render_camera)
-                    if kill:
+                    if enemy.type == "beam":
+                        enemy.render(self.display,offset=self.render_camera)
+                    if kill and enemy.type == "boss":
                         self.projectiles=[] 
                         self.special_projectiles=[]
                         phase = enemy.phase
@@ -298,6 +320,16 @@ class main_game:
                         elif phase == 3:
                             self.first_phase_cutscene()
                             self.win = 1
+                    elif kill:
+                        self.enemy_spawners.remove(enemy)
+                        for i in range(4):
+                            self.sparks.append(Flame((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 3+random.random()))
+                            self.sparks.append(Flexible_Spark((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 3+random.random(),(255,127,0)))
+                            self.sparks.append(Gold_Flame((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 2+random.random()))
+                            self.sparks.append(Flexible_Spark((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 1+random.random(),(0,255,0)))
+                            self.sparks.append(Ice_Flame((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 5+random.random()))
+                            self.sparks.append(Flexible_Spark((enemy.rect().center[0]+random.randint(-8,8),enemy.rect().center[1]), 1.5*math.pi, 4+random.random(),(148,0,211)))
+                        
                 if not self.dead:
                     self.player.update((self.movements[1] - self.movements[0],0),self.tilemap) #update player
                     #self.player.render(self.display,offset=self.render_camera) #render player
@@ -384,7 +416,7 @@ class main_game:
 
                 for particle in self.particles.copy():
                     kill = particle.update()
-                    if particle.p_type == 'leaf':
+                    if particle.p_type == 'fire':
                         particle.pos[0] += math.sin(particle.animation.frame*0.035)*0.3
                     particle.render(self.display,offset=self.render_camera)
                     if kill:
@@ -486,17 +518,18 @@ class main_game:
                 self.display_for_outline.blit(pygame.transform.scale(self.assets['energy_max'],(70,12)),(4,33))
             #rendering boss HP, scale the horizontal to 58
             for enemy in self.enemy_spawners:
-                if enemy.phase != 3 and enemy.HP < enemy.max_HP:
-                    ratio = enemy.HP/enemy.max_HP
-                    pygame.draw.rect(self.display_for_outline,(255,0,0),(233+55*(1-ratio),34,55*ratio,4))
-                    self.display_for_outline.blit(pygame.transform.scale(self.assets['Boss_empty'],(58,12)),(230,30))
-                elif enemy.phase == 3 and enemy.timer_HP < enemy.max_HP:
-                    ratio = enemy.timer_HP/enemy.max_HP
-                    #orange
-                    pygame.draw.rect(self.display_for_outline,(255,127,0),(233+55*(1-ratio),34,55*ratio,4))
-                    self.display_for_outline.blit(pygame.transform.scale(self.assets['Boss_empty'],(58,12)),(230,30))
-                else:
-                    self.display_for_outline.blit(pygame.transform.scale(self.assets['Boss_full'],(58,12)),(230,30))
+                if enemy.type == 'boss':
+                    if enemy.phase != 3 and enemy.HP < enemy.max_HP:
+                        ratio = enemy.HP/enemy.max_HP
+                        pygame.draw.rect(self.display_for_outline,(255,0,0),(233+55*(1-ratio),34,55*ratio,4))
+                        self.display_for_outline.blit(pygame.transform.scale(self.assets['Boss_empty'],(58,12)),(230,30))
+                    elif enemy.phase == 3 and enemy.timer_HP < enemy.max_HP:
+                        ratio = enemy.timer_HP/enemy.max_HP
+                        #orange
+                        pygame.draw.rect(self.display_for_outline,(255,127,0),(233+55*(1-ratio),34,55*ratio,4))
+                        self.display_for_outline.blit(pygame.transform.scale(self.assets['Boss_empty'],(58,12)),(230,30))
+                    else:
+                        self.display_for_outline.blit(pygame.transform.scale(self.assets['Boss_full'],(58,12)),(230,30))
             
                 
                       
@@ -506,6 +539,9 @@ class main_game:
             #if not self.dead and abs(self.player.dashing) < 50:
             if not self.dead :
                 self.player.render_new(self.screen,offset=self.render_camera) #render player
+            for enemy in self.enemy_spawners:
+                if enemy.type != "beam":
+                    enemy.render_new(self.screen,offset=self.render_camera)
 
             if self.cutscene_timer > 0:    
                 self.cutscene_timer -= 1
@@ -580,6 +616,12 @@ class main_game:
                     return
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
+                        for i in range(60):
+                            decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                            decrease_light.fill((0, 0, 0, 10))  # RGBA: (0, 0, 0, 128) for half transparency
+                            self.screen.blit(decrease_light, (0, 0))
+                            self.clock.tick(60)
+                            pygame.display.flip()
                         self.load_level()
                         self.run_game()
                         pygame.mixer.music.load("game_testing/data/sfx/Raise_the_Flag_of_Cheating.wav")
@@ -587,6 +629,12 @@ class main_game:
                         pygame.mixer.music.play(-1)
                 if event.type == pygame.JOYBUTTONDOWN:
                     if event.button == 0 and self.title_select[0]:  
+                        for i in range(60):
+                            decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                            decrease_light.fill((0, 0, 0, 10))  # RGBA: (0, 0, 0, 128) for half transparency
+                            self.screen.blit(decrease_light, (0, 0))
+                            self.clock.tick(60)
+                            pygame.display.flip()
                         self.load_level()
                         self.run_game()
                         pygame.mixer.music.load("game_testing/data/sfx/Raise_the_Flag_of_Cheating.wav")
