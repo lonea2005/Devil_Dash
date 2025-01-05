@@ -37,24 +37,35 @@ class main_game:
         #放大兩倍
         self.display = pygame.Surface((HALF_SCREEN_WIDTH, HALF_SCREEN_HEIGHT), pygame.SRCALPHA)
         self.display_for_outline = pygame.Surface((HALF_SCREEN_WIDTH, HALF_SCREEN_HEIGHT))
-        self.display_pause = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT),pygame.SRCALPHA)
+        self.display_brightness = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT),pygame.SRCALPHA)
         self.temp_screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT),pygame.SRCALPHA)
 
         self.clock = pygame.time.Clock()
         
         self.title_select_cd = 0
+        self.setting_select_cd = 0
 
         self.title_select = [False,False,False]
+        self.setting_select = [[True,False],[False,False],[False,False],[False,False]]
+        self.setting_index = [1,1]
 
         self.assets = {
             "font": pygame.font.Font("game_testing/data/font/LXGWWenKaiMonoTC-Bold.ttf", 36),
+            "font_setting": pygame.font.Font("game_testing/data/font/LXGWWenKaiMonoTC-Bold.ttf", 50),
             "title_screen": load_trans_image("標題畫面.jpg"),
             "title_start": load_trans_image("buttons/start_button.png"),
             "title_start_selected": load_trans_image("buttons/chosen_start_button.png"),
             "title_setting": load_trans_image("buttons/setting_button.png"),
             "title_setting_selected": load_trans_image("buttons/chosen_setting_button.png"),
+            "tri_right": load_trans_image("buttons/tri_1.png"),
+            "tri_right_selected": load_trans_image("buttons/tri_2.png"),
+            "tri_left": pygame.transform.flip(load_trans_image("buttons/tri_1.png"),True,False),
+            "tri_left_selected": pygame.transform.flip(load_trans_image("buttons/tri_2.png"),True,False),
+            "setting_screen":load_trans_image("buttons/setting_bg.png"),
             "button_background": load_trans_image("buttons/bg.png"),
             "text_box": load_image("text_box.png"),
+            "music": load_trans_image("music.png"),
+            "sun": load_trans_image("sun.png"),
             "battle_start": load_trans_image("BattleStart.png"),
             "decor" : load_tile("tiles/decor"),
             "stone" : load_tile("tiles/stone"),
@@ -79,7 +90,9 @@ class main_game:
             "particle/particle" : Animation(load_images("particles/particle"),duration=6,loop=False),
             "particle/slash" : Animation(load_trans_scaled_images("entities/slash",0.15),duration=4,loop=False),
             "particle/hp" : Animation(load_images("particles/hp"),duration=10,loop=False),
-            "projectile" : load_image("projectile.png"),
+            #"projectile" : load_image("projectile.png"),
+            "projectile" : pygame.transform.rotate(load_image("entities/fireball/0.png"),90),
+            "fireball" : Animation(load_images("entities/fireball"),duration=10,loop=True),
             "projectile_1": load_image("projectile.png"),
             "projectile_2": load_image("projectile_orange.png"),
             "projectile_3": load_image("projectile_yellow.png"),
@@ -118,6 +131,10 @@ class main_game:
         self.sfx["swing"].set_volume(0.7)
         self.sfx["hit"].set_volume(0.8) 
         self.sfx["got_hit"].set_volume(1)
+
+        self.bgm_factor = 5
+        self.sfx_factor = 5
+        self.brightness = 3
 
 
         self.level = -1
@@ -178,7 +195,7 @@ class main_game:
         if self.level == -1:
             if new_level:
                 pygame.mixer.music.load("game_testing/data/sfx/music_0.wav")
-                pygame.mixer.music.set_volume(0.2)
+                pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)
                 pygame.mixer.music.play(-1)
         if self.level == 0:
             if new_level:
@@ -195,7 +212,7 @@ class main_game:
         elif self.level == 1:
             if new_level:
                 pygame.mixer.music.load("game_testing/data/sfx/music.wav")
-                pygame.mixer.music.set_volume(0.4)
+                pygame.mixer.music.set_volume(self.bgm_factor/5*0.4)
                 pygame.mixer.music.play(-1)
 
     def run_game(self):
@@ -209,7 +226,7 @@ class main_game:
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_p:
                             self.pause = False
-                            pygame.mixer.music.set_volume(0.2)
+                            pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)
                         if event.key == pygame.K_UP and self.pause_select_cd == 0:
                             self.pause_select = max(0,self.pause_select-1)
                             self.pause_select_cd = 1
@@ -219,10 +236,10 @@ class main_game:
                         if event.key == pygame.K_SPACE:
                             if self.pause_select == 0:
                                 self.pause = False
-                                pygame.mixer.music.set_volume(0.2)
+                                pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)
                             elif self.pause_select == 1:
                                 self.pause = False
-                                pygame.mixer.music.set_volume(0.2)
+                                pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)
                                 self.dead = 10
                             elif self.pause_select == 2:
                                 pygame.mixer.music.stop()
@@ -230,15 +247,15 @@ class main_game:
                     if event.type == pygame.JOYBUTTONDOWN:
                         if event.button == 11:
                             self.pause = False
-                            pygame.mixer.music.set_volume(0.2)
+                            pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)
                         if event.button == 0:
                             if self.pause_select == 0:
                                 self.pause = False
-                                pygame.mixer.music.set_volume(0.2)  
+                                pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)  
                             elif self.pause_select == 1:
                                 self.pause = False
                                 self.dead = 10
-                                pygame.mixer.music.set_volume(0.2)
+                                pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)
                             elif self.pause_select == 2:
                                 return
                     if event.type == pygame.JOYAXISMOTION:
@@ -250,7 +267,6 @@ class main_game:
                                 self.pause_select = min(2,self.pause_select+1)
                                 self.pause_select_cd = 3
                 
-                #make self.display_pause a transparent screen
                 self.pause_select_cd = max(0,self.pause_select_cd-1)
                 
                 self.screen.blit(self.temp_screen, (0,0))
@@ -267,6 +283,7 @@ class main_game:
                 elif self.pause_select == 2:
                     img = self.assets['pressed_menu']
                     self.screen.blit(img, (SCREEN_WIDTH//2 - img.get_width()//2, SCREEN_HEIGHT//2+150 - img.get_height()//2))
+                self.screen.blit(self.display_brightness, (0, 0))
                 pygame.display.update()
                 self.clock.tick(FPS)
 
@@ -282,7 +299,7 @@ class main_game:
                 self.transition += 1
             if self.win>0:
                 self.win += 1
-                pygame.mixer.music.set_volume(0.2*(90-self.win)/90)
+                pygame.mixer.music.set_volume(self.bgm_factor/5*0.2*(90-self.win)/90)
                 if self.win > 90:
                     self.transition += 1
                     if self.transition > 30:
@@ -356,7 +373,10 @@ class main_game:
                     projectile[0][0] += projectile[1]
                     projectile[2] += 1
                     img = self.assets['projectile']
-                    self.display.blit(img,(projectile[0][0]-img.get_width()/2 -self.render_camera[0],projectile[0][1]-img.get_height()/2-self.render_camera[1]))
+                    if projectile[1] > 0:
+                        self.display.blit(img,(projectile[0][0]-img.get_width()/2 -self.render_camera[0],projectile[0][1]-img.get_height()/2-self.render_camera[1]))
+                    else:
+                        self.display.blit(pygame.transform.flip(img, True, False),(projectile[0][0]-img.get_width()/2 -self.render_camera[0],projectile[0][1]-img.get_height()/2-self.render_camera[1]))
                     if self.tilemap.solid_check(projectile[0]):
                         try:
                             self.projectiles.remove(projectile) 
@@ -599,7 +619,7 @@ class main_game:
                 self.screen.blit(pause_screen, (0, 0))
                 self.pause_select = 0
                 self.temp_screen = self.screen.copy()
-                pygame.mixer.music.set_volume(0.1)
+                pygame.mixer.music.set_volume(self.bgm_factor/5*0.1)
 
             if self.in_cutscene == True and not self.transition: 
                 #blit the text box at the buttom of the screen
@@ -620,7 +640,7 @@ class main_game:
                             if not self.text_list:
                                 self.in_cutscene = False
                                 pygame.mixer.music.load("game_testing/data/sfx/music_1.wav")
-                                pygame.mixer.music.set_volume(0.2)
+                                pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)
                                 pygame.mixer.music.play(-1)
             if self.battle_count_down > 0 and not self.in_cutscene:
                 self.battle_count_down -= 1
@@ -635,7 +655,7 @@ class main_game:
                     self.screen.blit(img, (HALF_SCREEN_WIDTH/2, HALF_SCREEN_HEIGHT/2-100))
                 else:
                     self.battle_count_down = 0
-            
+            self.screen.blit(self.display_brightness, (0, 0))
             pygame.display.update()
             self.clock.tick(FPS)
 
@@ -644,7 +664,7 @@ class main_game:
 
     def run_main_menu(self):
         pygame.mixer.music.load("game_testing/data/sfx/Raise_the_Flag_of_Cheating.wav")
-        pygame.mixer.music.set_volume(0.3)
+        pygame.mixer.music.set_volume(self.bgm_factor/5*0.3)
         pygame.mixer.music.play(-1)
         while True:
             #blit the title screen and scale it to the screen size
@@ -666,21 +686,21 @@ class main_game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    return
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         for i in range(60):
                             decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
                             decrease_light.fill((0, 0, 0, 10))  # RGBA: (0, 0, 0, 128) for half transparency
                             self.screen.blit(decrease_light, (0, 0))
-                            pygame.mixer.music.set_volume(0.3*i/60)
+                            pygame.mixer.music.set_volume(self.bgm_factor/5*0.3*i/60)
                             self.clock.tick(60)
+                            self.screen.blit(self.display_brightness, (0, 0))
                             pygame.display.flip()
                         self.level = 0
                         self.load_level()
                         self.run_game()
                         pygame.mixer.music.load("game_testing/data/sfx/Raise_the_Flag_of_Cheating.wav")
-                        pygame.mixer.music.set_volume(0.3)
+                        pygame.mixer.music.set_volume(self.bgm_factor/5*0.3)
                         pygame.mixer.music.play(-1)
                 if event.type == pygame.JOYBUTTONDOWN:
                     if event.button == 0 and self.title_select[0]:  
@@ -688,14 +708,19 @@ class main_game:
                             decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
                             decrease_light.fill((0, 0, 0, 10))  # RGBA: (0, 0, 0, 128) for half transparency
                             self.screen.blit(decrease_light, (0, 0))
-                            pygame.mixer.music.set_volume(0.3*(60-i)/60)
+                            pygame.mixer.music.set_volume(self.bgm_factor/5*0.3*(60-i)/60)
                             self.clock.tick(60)
+                            self.screen.blit(self.display_brightness, (0, 0))
                             pygame.display.flip()
                         self.load_level()
                         self.run_game()
                         pygame.mixer.music.load("game_testing/data/sfx/Raise_the_Flag_of_Cheating.wav")
-                        pygame.mixer.music.set_volume(0.3)
+                        pygame.mixer.music.set_volume(self.bgm_factor/5*0.3)
                         pygame.mixer.music.play(-1)
+                    elif event.button == 0 and self.title_select[2]:
+                        self.run_setting()
+                    elif event.button == 0 and self.title_select[1]:
+                        pygame.quit()
                 if event.type == pygame.JOYAXISMOTION:
                     #THERE IS A BUG WITH COUNTING ISSUE WHICH RESULT IN THE ORDER BEING 1 3 2, DO NOT TRY TO FIX IT
                     if event.axis == 1:
@@ -722,8 +747,129 @@ class main_game:
                                 self.title_select[0] = True
                             self.title_select_cd = 10
             self.title_select_cd = max(0,self.title_select_cd-1)
+            self.screen.blit(self.display_brightness, (0, 0))
             pygame.display.flip()
+    def run_setting(self):
+        self.setting_select = [[True,False],[False,False],[False,False],[False,False]]
+        self.setting_index = [1,1]
+        self.temp_screen = self.screen.copy()
 
+        while True:
+            self.setting_select_cd = max(0,self.setting_select_cd-1)
+            self.screen.blit(self.temp_screen, (0,0))
+            #blit setting_bg in the middle of the screen
+            self.screen.blit(pygame.transform.scale(self.assets["setting_screen"], (2*SCREEN_WIDTH/3, 2*SCREEN_HEIGHT/3)),(SCREEN_WIDTH/6, SCREEN_HEIGHT/6))
+            
+            
+            text_font = self.assets["font_setting"].render("BGM音量", True, (0,0,0))
+            self.screen.blit(text_font, (SCREEN_WIDTH/3-120, SCREEN_HEIGHT/6+100))
+            self.screen.blit(pygame.transform.scale(self.assets["music"], (50,50)),(SCREEN_WIDTH/3+90, SCREEN_HEIGHT/6+105))
+            text = str(self.bgm_factor)
+            text_font = self.assets["font_setting"].render(text, True, (0,0,0))
+            self.screen.blit(text_font, (SCREEN_WIDTH/3+335, SCREEN_HEIGHT/6+95))
+
+            text_font = self.assets["font_setting"].render("SFX音量", True, (0,0,0))
+            self.screen.blit(text_font, (SCREEN_WIDTH/3-120, SCREEN_HEIGHT/6+250))
+            self.screen.blit(pygame.transform.scale(self.assets["music"], (50,50)),(SCREEN_WIDTH/3+90, SCREEN_HEIGHT/6+255))
+            text = str(self.sfx_factor)
+            text_font = self.assets["font_setting"].render(text, True, (0,0,0))
+            self.screen.blit(text_font, (SCREEN_WIDTH/3+335, SCREEN_HEIGHT/6+250))
+
+            text_font = self.assets["font_setting"].render("畫面亮度", True, (0,0,0))
+            self.screen.blit(text_font, (SCREEN_WIDTH/3-130, SCREEN_HEIGHT/6+400))
+            self.screen.blit(pygame.transform.scale(self.assets["sun"], (50,50)),(SCREEN_WIDTH/3+95, SCREEN_HEIGHT/6+405))
+            text = str(self.brightness)
+            text_font = self.assets["font_setting"].render(text, True, (0,0,0))
+            self.screen.blit(text_font, (SCREEN_WIDTH/3+335, SCREEN_HEIGHT/6+400))
+
+            if self.setting_select[0][0]:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_left_selected"], (50,50)),(SCREEN_WIDTH/3+200, SCREEN_HEIGHT/6+100))
+            else:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_left"], (50,50)),(SCREEN_WIDTH/3+200, SCREEN_HEIGHT/6+100))
+            if self.setting_select[0][1]:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_right_selected"], (50,50)),(SCREEN_WIDTH/3+450, SCREEN_HEIGHT/6+100))
+            else:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_right"], (50,50)),(SCREEN_WIDTH/3+450, SCREEN_HEIGHT/6+100))
+            if self.setting_select[1][0]:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_left_selected"], (50,50)),(SCREEN_WIDTH/3+200, SCREEN_HEIGHT/6+250))
+            else:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_left"], (50,50)),(SCREEN_WIDTH/3+200, SCREEN_HEIGHT/6+250))
+            if self.setting_select[1][1]:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_right_selected"], (50,50)),(SCREEN_WIDTH/3+450, SCREEN_HEIGHT/6+250))
+            else:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_right"], (50,50)),(SCREEN_WIDTH/3+450, SCREEN_HEIGHT/6+250))
+            if self.setting_select[2][0]:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_left_selected"], (50,50)),(SCREEN_WIDTH/3+200, SCREEN_HEIGHT/6+400))
+            else:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_left"], (50,50)),(SCREEN_WIDTH/3+200, SCREEN_HEIGHT/6+400))
+            if self.setting_select[2][1]:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_right_selected"], (50,50)),(SCREEN_WIDTH/3+450, SCREEN_HEIGHT/6+400))
+            else:
+                self.screen.blit(pygame.transform.scale(self.assets["tri_right"], (50,50)),(SCREEN_WIDTH/3+450, SCREEN_HEIGHT/6+400))
+            if self.setting_select[3][0] or self.setting_select[3][1]:
+                self.screen.blit(self.assets["pressed_menu"],(SCREEN_WIDTH/2-200, 4*SCREEN_HEIGHT/6-100))
+            else:
+                self.screen.blit(self.assets["menu"],(SCREEN_WIDTH/2-200, 4*SCREEN_HEIGHT/6-100))
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        return
+                if event.type == pygame.JOYBUTTONDOWN:
+                    if event.button == 0:
+                        if self.setting_select[3][0] or self.setting_select[3][1]:
+                            return
+                        elif self.setting_select[0][0]:
+                            self.bgm_factor = max(0,self.bgm_factor-1)
+                        elif self.setting_select[0][1]:
+                            self.bgm_factor = min(10,self.bgm_factor+1)
+                        elif self.setting_select[1][0]:
+                            self.sfx_factor = max(0,self.sfx_factor-1)
+                        elif self.setting_select[1][1]:
+                            self.sfx_factor = min(10,self.sfx_factor+1)
+                        elif self.setting_select[2][0]:
+                            self.brightness = max(0,self.brightness-1)
+                        elif self.setting_select[2][1]:
+                            self.brightness = min(3,self.brightness+1) 
+                if event.type == pygame.JOYAXISMOTION:
+                    if event.axis == 1 and self.setting_select_cd == 0:
+                        if self.setting_index[0]==0 and self.setting_index[1]==0:
+                            self.setting_index=[1,1]
+                        elif event.value < -0.5 and self.setting_select_cd == 0:
+                            self.setting_index[0] = max(self.setting_index[0]-1,1)
+                        elif event.value > 0.5 and self.setting_select_cd == 0:
+                            self.setting_index[0] = min(self.setting_index[0]+1,4)
+                        if abs(event.value) > 0.5:
+                            self.setting_select=[[False,False],[False,False],[False,False],[False,False]]
+                            self.setting_select[self.setting_index[0]-1][self.setting_index[1]-1] = True
+                            self.setting_select_cd = 10
+                    if event.axis == 0 and self.setting_select_cd == 0:
+                        if self.setting_index[0]==0 and self.setting_index[1]==0:
+                            self.setting_index=[1,1]
+                        elif event.value < -0.5 and self.setting_select_cd == 0:
+                            self.setting_index[1] = max(self.setting_index[1]-1,1)
+                        elif event.value > 0.5 and self.setting_select_cd == 0:
+                            self.setting_index[1] = min(self.setting_index[1]+1,2)
+                        if abs(event.value) > 0.5:
+                            self.setting_select=[[False,False],[False,False],[False,False],[False,False]]
+                            self.setting_select[self.setting_index[0]-1][self.setting_index[1]-1] = True
+                            self.setting_select_cd = 10
+            #setting
+            pygame.mixer.music.set_volume(self.bgm_factor/5*0.3)
+            self.sfx["ambience"].set_volume(0.2*self.sfx_factor/5)
+            self.sfx["shoot"].set_volume(0.5*self.sfx_factor/5)
+            self.sfx["jump"].set_volume(0.7*self.sfx_factor/5)
+            self.sfx["dash"].set_volume(0.7*self.sfx_factor/5)
+            self.sfx["swing"].set_volume(0.7*self.sfx_factor/5)
+            self.sfx["hit"].set_volume(0.8*self.sfx_factor/5) 
+            self.sfx["got_hit"].set_volume(1*self.sfx_factor/5)
+            self.clock.tick(FPS)
+            self.display_brightness.fill((0, 0, 0, 40*(3-self.brightness)))  # RGBA: (0, 0, 0, 128) for half transparency
+            self.screen.blit(self.display_brightness, (0, 0))
+            pygame.display.flip()
 
 if __name__ == "__main__":
     main_game().run_main_menu()

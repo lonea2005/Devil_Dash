@@ -195,7 +195,7 @@ class Player(physics_entity):
     
     def testing_stats(self):
         #testing stats goes here
-        self.damage = 100
+        #self.damage = 100
         #self.weapon = "貪欲的叉勺"
         #self.accessory = ["巫女的御幣"]
 
