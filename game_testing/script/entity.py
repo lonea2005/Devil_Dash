@@ -742,6 +742,9 @@ class Enemy(physics_entity):
     def frozen_in_air(self):
         self.velocity = [0,0]
         self.dashing = False
+        self.air_dashing = False
+        self.dashing_towards_player = False
+        self.furiously_dashing = False
         self.froze_in_air = True
         #if collision with ground, stop the action
         if self.check_collision['down']:
@@ -782,6 +785,7 @@ class Enemy(physics_entity):
                 angle = i * math.pi / 8
                 self.main_game.special_projectiles.append(Special_Projectile((self.rect().centerx,self.rect().centery-7),[math.cos(angle),math.sin(angle)],1.5,"projectile",max_timer=30,type="small_explode",main_game=self.main_game))
             self.action_queue=[60,"jump()",20,"frozen_in_air()",10,"prepare_attack(1)",60,["spell_card()",80],90,"air_dash()",25,"frozen_in_air()",10,["spell_card()",80],90,["spread()",15],90,"prepare_attack()",["attack_preview()",30],5,["dash_to()",1]]
+            self.set_action('jump')
 
     def diag_explode_shoot(self):
         relavtive_pos = self.check_player_pos()
@@ -856,6 +860,7 @@ class Enemy(physics_entity):
 
     def spell_card_spin(self,count_down_timer):
         self.using_spell_card = True
+        self.set_action('jump')
         if count_down_timer <=48:
             if self.timer_HP > 1500:
                 for i in range(4):
