@@ -81,3 +81,9 @@ class Animation:
             self.frame = min(self.frame + 1, len(self.images)*self.duration-1)  
             if self.frame >= len(self.images)*self.duration-1:
                 self.done = True
+
+    def get_width(self):
+        return self.images[0].get_width()
+    
+    def get_height(self):
+        return self.images[0].get_height()

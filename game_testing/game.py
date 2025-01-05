@@ -48,6 +48,7 @@ class main_game:
         self.title_select = [False,False,False]
         self.setting_select = [[True,False],[False,False],[False,False],[False,False]]
         self.setting_index = [1,1]
+        self.text_counter = 0
 
         self.assets = {
             "font": pygame.font.Font("game_testing/data/font/LXGWWenKaiMonoTC-Bold.ttf", 36),
@@ -73,7 +74,7 @@ class main_game:
             "large_decor" : load_trans_tile("tiles/large_decor"),
             "block" : load_fix_tile("tiles/block"),
             "player": load_image("entities/player.png"),
-            #"background": load_image("background.png"),
+            "background_2": load_image("background3.jpg"),
             "background": load_image("back.png"),
             "enemy/idle" : Animation(load_trans_images("entities/enemy/idle"),duration=10,loop=True),
             "enemy/run" : Animation(load_trans_images("entities/enemy/run"),duration=4,loop=True),
@@ -90,8 +91,8 @@ class main_game:
             "particle/particle" : Animation(load_images("particles/particle"),duration=6,loop=False),
             "particle/slash" : Animation(load_trans_scaled_images("entities/slash",0.15),duration=4,loop=False),
             "particle/hp" : Animation(load_images("particles/hp"),duration=10,loop=False),
-            #"projectile" : load_image("projectile.png"),
-            "projectile" : pygame.transform.rotate(load_image("entities/fireball/0.png"),90),
+            "projectile" : load_image("projectile.png"),
+            #"projectile" : pygame.transform.rotate(load_image("entities/fireball/0.png"),90),
             "fireball" : Animation(load_images("entities/fireball"),duration=10,loop=True),
             "projectile_1": load_image("projectile.png"),
             "projectile_2": load_image("projectile_orange.png"),
@@ -200,7 +201,7 @@ class main_game:
         if self.level == 0:
             if new_level:
                 self.in_cutscene = True
-                self.text_list = ["劇情1","劇情2","劇情3","劇情4"]
+                self.text_list = ["我回來了!","zzz...zzz...","門番又在偷懶了","安靜的從旁邊溜進去......","zzz......!","有入侵者！？"]
                 self.battle_count_down = 60
                 '''
                 pygame.mixer.music.load("game_testing/data/sfx/music_1.wav")
@@ -289,7 +290,10 @@ class main_game:
 
 
             self.display.fill((0,0,0,0))
-            self.display_for_outline.blit(pygame.transform.scale(self.assets['background'],(self.assets['background'].get_width()/2,self.assets['background'].get_height()/2)), (0,0))
+            if self.level <=0:
+                self.display_for_outline.blit(pygame.transform.scale(self.assets['background'],(self.assets['background'].get_width()/2,self.assets['background'].get_height()/2)), (0,0))
+            else:
+                self.display_for_outline.blit(pygame.transform.scale(self.assets['background_2'],(self.assets['background_2'].get_width()/2,self.assets['background_2'].get_height()/2)), (0,0))
             #blit a half transparent black screen on top of the background
             decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
             decrease_light.fill((0, 0, 0, 64))  # RGBA: (0, 0, 0, 128) for half transparency
@@ -297,9 +301,11 @@ class main_game:
 
             if self.transition < 0:
                 self.transition += 1
-            if self.win>0:
+            if self.win>0 and not self.in_cutscene:
                 self.win += 1
                 pygame.mixer.music.set_volume(self.bgm_factor/5*0.2*(90-self.win)/90)
+                if self.win == 90 and self.level == 0:
+                    self.first_phase_cutscene()
                 if self.win > 90:
                     self.transition += 1
                     if self.transition > 30:
@@ -350,9 +356,8 @@ class main_game:
                         if phase == 1:
                             self.enemy_spawners.append(Enemy(self,[287,145],(8,15),phase=2,action_queue=[100,"jump()",40,"frozen_in_air()",10,"air_8_shoot(1)",30,"air_8_shoot(2)",30,"air_8_shoot(1)",30,"prepare_attack()",["attack_preview()",30],5,["dash_to()",1]]))
                         elif phase == 2:
-                            self.enemy_spawners.append(Enemy(self,[287,90],(8,15),phase=3,action_queue=[60,"cut_in()",120,"prepare_attack(1)",60,["spell_card()",80],90,"air_dash()",40,"frozen_in_air()",10,["spell_card()",80],90,["spread()",15],90,"prepare_attack()",["attack_preview()",30],5,["dash_to()",1]]))                
+                            self.enemy_spawners.append(Enemy(self,[287,90],(8,15),phase=3,action_queue=[60,"cut_in()",60,"prepare_attack(1)",60,["spell_card()",80],90,"air_dash()",40,"frozen_in_air()",10,["spell_card()",80],90,["spread()",15],90,"prepare_attack()",["attack_preview()",30],5,["dash_to()",1]]))                
                         elif phase == 3:
-                            self.first_phase_cutscene()
                             self.win = 1
                     elif kill:
                         self.enemy_spawners.remove(enemy)
@@ -373,6 +378,7 @@ class main_game:
                     projectile[0][0] += projectile[1]
                     projectile[2] += 1
                     img = self.assets['projectile']
+                    #img = pygame.transform.scale(img,(img.get_width()//8,img.get_height()//8))
                     if projectile[1] > 0:
                         self.display.blit(img,(projectile[0][0]-img.get_width()/2 -self.render_camera[0],projectile[0][1]-img.get_height()/2-self.render_camera[1]))
                     else:
@@ -398,16 +404,18 @@ class main_game:
                             self.player.take_damage(1,(list(self.player.rect().center).copy()[0]-projectile[0][0],0))
                 for special_projectile in self.special_projectiles.copy():
                     special_projectile.update()
+                    
                     img = self.assets[special_projectile.img_name]
                     #rotate image according to its direction which is a vector
                     angle = math.atan2(special_projectile.direction[1],special_projectile.direction[0]) * 180 / math.pi
                     #img = pygame.transform.rotate(img,-1*angle)
                     self.display.blit(img,(special_projectile.pos[0]-img.get_width()/2 -self.render_camera[0],special_projectile.pos[1]-img.get_height()/2-self.render_camera[1]))
                     if self.tilemap.solid_check(special_projectile.pos):
-                        try:
-                            self.special_projectiles.remove(special_projectile)
-                        except:
-                            pass
+                        if special_projectile.reverse():
+                            try:
+                                self.special_projectiles.remove(special_projectile)
+                            except:
+                                pass
                         for i in range(4):
                             #match the spark's color with the projectile
                             if special_projectile.img_name == 'projectile_1':
@@ -622,12 +630,18 @@ class main_game:
                 pygame.mixer.music.set_volume(self.bgm_factor/5*0.1)
 
             if self.in_cutscene == True and not self.transition: 
+                speed = 4
                 #blit the text box at the buttom of the screen
                 self.screen.blit(pygame.transform.scale(self.assets["text_box"], (SCREEN_WIDTH, SCREEN_HEIGHT//4)),(0,3*SCREEN_HEIGHT//4))
                 #blit the text using font in the assets
                 if self.text_list:
                     text = self.text_list[0]
-                    text_font = self.assets["font"].render(text, True, (255,255,255))
+                    if self.text_counter < len(text)*speed:
+                        self.text_counter += 1
+                    elif self.text_counter >= speed*len(text):
+                        pass
+                    snip = text[0:self.text_counter//speed]
+                    text_font = self.assets["font"].render(snip, True, (255,255,255))
                     self.screen.blit(text_font, (SCREEN_WIDTH//8, 3*SCREEN_HEIGHT//4 + SCREEN_HEIGHT//8 - text_font.get_height()//2))
 
                 for event in pygame.event.get():
@@ -637,11 +651,22 @@ class main_game:
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_SPACE:
                             self.text_list.pop(0)
+                            self.text_counter = 0
                             if not self.text_list:
                                 self.in_cutscene = False
                                 pygame.mixer.music.load("game_testing/data/sfx/music_1.wav")
                                 pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)
                                 pygame.mixer.music.play(-1)
+                    if event.type == pygame.JOYBUTTONDOWN:
+                        if event.button == 0:
+                            self.text_list.pop(0)
+                            self.text_counter = 0
+                            if not self.text_list:
+                                self.in_cutscene = False
+                                pygame.mixer.music.load("game_testing/data/sfx/music_1.wav")
+                                pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)
+                                pygame.mixer.music.play(-1)
+
             if self.battle_count_down > 0 and not self.in_cutscene:
                 self.battle_count_down -= 1
                 #blit battle_start at the middle of the screen
@@ -660,7 +685,8 @@ class main_game:
             self.clock.tick(FPS)
 
     def first_phase_cutscene(self):
-        pass
+        self.in_cutscene = True
+        self.text_list = ["原來是小惡魔啊，還以為是入侵者呢（呵欠","......zzz...zzz","竟然睡回去了......","算了，趕快進屋吧"]
 
     def run_main_menu(self):
         pygame.mixer.music.load("game_testing/data/sfx/Raise_the_Flag_of_Cheating.wav")

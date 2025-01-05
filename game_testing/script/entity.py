@@ -16,13 +16,16 @@ class Diagnal_Projectile:
         self.pos[0] += self.direction[0] * self.speed / self.length_of_direction
         self.pos[1] += self.direction[1] * self.speed / self.length_of_direction
         self.timer += 1
+    def reverse(self):
+        return True
 
 class Special_Projectile(Diagnal_Projectile):
-    def __init__(self,pos=[0,0],direction=[1,0],speed=1,img_name="",max_timer=180,type="normal",main_game=None):
+    def __init__(self,pos=[0,0],direction=[1,0],speed=1,img_name="",max_timer=180,type="normal",main_game=None,reverse=False):
         super().__init__(pos,direction,speed,img_name)
         self.max_timer = max_timer
         self.type = type
         self.main_game = main_game
+        self.can_reverse = reverse
 
     def update(self):
         if self.type == ("two_stage_spin" or "two_stage_random") and self.timer < self.max_timer:
@@ -59,6 +62,13 @@ class Special_Projectile(Diagnal_Projectile):
             for i in range(4):
                 self.main_game.sparks.append(Ice_Flame(self.main_game.special_projectiles[-1].pos,random.random()*math.pi*2,1+random.random()))
         self.main_game.special_projectiles.remove(self)
+
+    def reverse(self):
+        if self.can_reverse:
+            self.direction = [-self.direction[0],-self.direction[1]]
+            self.can_reverse = False
+            return False
+        return True
 
 
 class physics_entity:
@@ -439,10 +449,10 @@ class Enemy(physics_entity):
             self.HP = 40
             #self.HP = 1
         elif self.phase == 3:
-            self.HP = 2250
+            self.HP = 2200
             self.using_spell_card = True
-            self.timer_HP = 2250
-            self.max_HP = 2250
+            self.timer_HP = 2200
+            self.max_HP = 2200
         self.attack_combo = 0
         self.max_HP = self.HP
         #combo 1: jump - dash - drop attack - land shot
@@ -847,9 +857,19 @@ class Enemy(physics_entity):
     def spell_card_spin(self,count_down_timer):
         self.using_spell_card = True
         if count_down_timer <=48:
-            for i in range(4):
-                angle = math.pi*2/32*(97-count_down_timer)+math.pi*i/2
-                self.main_game.special_projectiles.append(Special_Projectile(self.rect().center,[math.cos(angle),math.sin(angle)],3,"projectile_"+str(count_down_timer%7+1),max_timer=40,type="two_stage_spin",main_game=self.main_game))
+            if self.timer_HP > 1500:
+                for i in range(4):
+                    angle = math.pi*2/32*(97-count_down_timer)+math.pi*i/2
+                    self.main_game.special_projectiles.append(Special_Projectile(self.rect().center,[math.cos(angle),math.sin(angle)],3,"projectile_"+str(count_down_timer%7+1),max_timer=40,type="two_stage_spin",main_game=self.main_game))
+            elif self.timer_HP > 800:
+                for i in range(6):
+                    angle = math.pi*2/36*(97-count_down_timer)+math.pi*i/3
+                    self.main_game.special_projectiles.append(Special_Projectile(self.rect().center,[math.cos(angle),math.sin(angle)],3,"projectile_"+str(count_down_timer%7+1),max_timer=40,type="two_stage_spin",main_game=self.main_game))
+            else:
+                for i in range(6):
+                    angle = math.pi*2/32*(97-count_down_timer)+math.pi*i/3
+                    self.main_game.special_projectiles.append(Special_Projectile(self.rect().center,[math.cos(angle),math.sin(angle)],3,"projectile_"+str(count_down_timer%7+1),max_timer=40,type="two_stage_spin",main_game=self.main_game))
+                
         else:
             #shoot a completely random direction projectile
             for i in range(2):
@@ -858,6 +878,7 @@ class Enemy(physics_entity):
     def spell_card_spread(self):
         for i in range(3):
             self.main_game.special_projectiles.append(Special_Projectile(self.rect().center,[random.random()*2-1,random.random()*2-1],1,"projectile",max_timer=30,type="small_explode",main_game=self.main_game))
+            #self.main_game.special_projectiles.append(Special_Projectile(self.rect().center,[random.random()*2-1,random.random()*2-1],1,"fireball",max_timer=30,type="small_explode",main_game=self.main_game))
 
     def cut_in(self):
         self.main_game.cutscene_timer = 120
