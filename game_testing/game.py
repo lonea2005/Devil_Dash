@@ -5,7 +5,7 @@ import os
 import random
 import math
 from script.entity import Player, Enemy, Beam, Dummy
-from script.utils import load_image
+from script.utils import load_image,load_white_image
 from script.utils import load_tile,load_trans_tile
 from script.utils import load_fix_tile
 from script.utils import load_images
@@ -53,18 +53,23 @@ class main_game:
         self.assets = {
             "font": pygame.font.Font("game_testing/data/font/LXGWWenKaiMonoTC-Bold.ttf", 36),
             "font_setting": pygame.font.Font("game_testing/data/font/LXGWWenKaiMonoTC-Bold.ttf", 50),
+            "title": load_trans_image("title.png"),
             "title_screen": load_trans_image("標題畫面.jpg"),
             "title_start": load_trans_image("buttons/start_button.png"),
             "title_start_selected": load_trans_image("buttons/chosen_start_button.png"),
             "title_setting": load_trans_image("buttons/setting_button.png"),
             "title_setting_selected": load_trans_image("buttons/chosen_setting_button.png"),
+            "title_quit":load_trans_image("buttons/quit_unchoose.png"),
+            "title_quit_selected":load_trans_image("buttons/quit_choose.png"),
             "tri_right": load_trans_image("buttons/tri_1.png"),
             "tri_right_selected": load_trans_image("buttons/tri_2.png"),
             "tri_left": pygame.transform.flip(load_trans_image("buttons/tri_1.png"),True,False),
             "tri_left_selected": pygame.transform.flip(load_trans_image("buttons/tri_2.png"),True,False),
-            "setting_screen":load_trans_image("buttons/setting_bg.png"),
+            "setting_screen":load_trans_image("setting_board.png"),
             "button_background": load_trans_image("buttons/bg.png"),
             "text_box": load_image("text_box.png"),
+            "head_1": load_trans_image("head/koakuma_head.png"),
+            "head_2": load_trans_image("head/hong_head.png"),
             "music": load_trans_image("music.png"),
             "sun": load_trans_image("sun.png"),
             "battle_start": load_trans_image("BattleStart.png"),
@@ -103,11 +108,12 @@ class main_game:
             "projectile_7": load_image("projectile_purple.png"),
             "HP" : load_trans_image("HP.png"),
             "Boss_full" : load_trans_image("max_HP_bar.png"),
-            "Boss_empty" : load_trans_image("empty_HP_bar.png"),
+            #"Boss_empty" : load_trans_image("empty_HP_bar.png"),
+            "Boss_empty" : load_trans_image("empty_HP.png"),
             "energy_max" : load_trans_image("max_SP_bar.png"),
             "energy_empty" : load_trans_image("empty_SP_bar.png"),
-            "retry" : load_trans_image("buttons/retry_1.png"),  
-            "pressed_retry" : load_trans_image("buttons/retry_2.png"),
+            "retry" : load_trans_image("buttons/retry_unchoose.png"),  
+            "pressed_retry" : load_trans_image("buttons/retry_choose.png"),
             "enemy_portrait_1" : load_trans_image("紅美鈴_大招立繪.png"),
             "continue" : load_trans_image("buttons/continue_1.png"),
             "pressed_continue" : load_trans_image("buttons/continue_2.png"),
@@ -202,6 +208,7 @@ class main_game:
             if new_level:
                 self.in_cutscene = True
                 self.text_list = ["我回來了!","zzz...zzz...","門番又在偷懶了","安靜的從旁邊溜進去......","zzz......!","有入侵者！？"]
+                self.order_list = [True,False,True,True,False,False]
                 self.battle_count_down = 60
                 '''
                 pygame.mixer.music.load("game_testing/data/sfx/music_1.wav")
@@ -230,10 +237,10 @@ class main_game:
                             pygame.mixer.music.set_volume(self.bgm_factor/5*0.2)
                         if event.key == pygame.K_UP and self.pause_select_cd == 0:
                             self.pause_select = max(0,self.pause_select-1)
-                            self.pause_select_cd = 1
+                            self.pause_select_cd = 10
                         if event.key == pygame.K_DOWN and self.pause_select_cd == 0:
                             self.pause_select = min(2,self.pause_select+1)
-                            self.pause_select_cd = 1
+                            self.pause_select_cd = 10
                         if event.key == pygame.K_SPACE:
                             if self.pause_select == 0:
                                 self.pause = False
@@ -263,10 +270,10 @@ class main_game:
                         if event.axis == 1:
                             if event.value < -0.5 and self.pause_select_cd == 0:
                                 self.pause_select = max(0,self.pause_select-1)
-                                self.pause_select_cd = 3
+                                self.pause_select_cd = 10
                             elif event.value > 0.5 and self.pause_select_cd == 0:
                                 self.pause_select = min(2,self.pause_select+1)
-                                self.pause_select_cd = 3
+                                self.pause_select_cd = 10
                 
                 self.pause_select_cd = max(0,self.pause_select_cd-1)
                 
@@ -633,6 +640,22 @@ class main_game:
                 speed = 4
                 #blit the text box at the buttom of the screen
                 self.screen.blit(pygame.transform.scale(self.assets["text_box"], (SCREEN_WIDTH, SCREEN_HEIGHT//4)),(0,3*SCREEN_HEIGHT//4))
+                #blit headd_1 at the left of the text box while scale it up to 2x
+                if self.order_list[0]:
+                    self.screen.blit(pygame.transform.scale(pygame.transform.flip(self.assets["head_1"],True,False),(self.assets["head_1"].get_width()*1.8,self.assets["head_1"].get_height()*1.8-3)),(10,3*SCREEN_HEIGHT//4+7))
+                    img = self.assets["head_2"].copy()
+                    decrease_light = pygame.Surface((img.get_width(), img.get_height()), pygame.SRCALPHA)
+                    decrease_light.fill((0, 0, 0, 128))  # RGBA: (0, 0, 0, 128) for half transparency
+                    img.blit(decrease_light,(0,0))
+                    self.screen.blit(pygame.transform.scale(img,(self.assets["head_2"].get_width()*1.8,self.assets["head_2"].get_height()*1.8-3)),(SCREEN_WIDTH-10-self.assets["head_2"].get_width()*1.8,3*SCREEN_HEIGHT//4+7))
+
+                else:
+                    self.screen.blit(pygame.transform.scale(self.assets["head_2"],(self.assets["head_2"].get_width()*1.8,self.assets["head_2"].get_height()*1.8-3)),(SCREEN_WIDTH-10-self.assets["head_2"].get_width()*1.8,3*SCREEN_HEIGHT//4+7))
+                    img= self.assets["head_1"].copy()
+                    decrease_light = pygame.Surface((img.get_width(), img.get_height()), pygame.SRCALPHA)
+                    decrease_light.fill((0, 0, 0, 128))  # RGBA: (0, 0, 0, 128) for half transparency
+                    img.blit(decrease_light,(0,0))
+                    self.screen.blit(pygame.transform.scale(pygame.transform.flip(img,True,False),(self.assets["head_1"].get_width()*1.8,self.assets["head_1"].get_height()*1.8-3)),(10,3*SCREEN_HEIGHT//4+7))
                 #blit the text using font in the assets
                 if self.text_list:
                     text = self.text_list[0]
@@ -642,7 +665,7 @@ class main_game:
                         pass
                     snip = text[0:self.text_counter//speed]
                     text_font = self.assets["font"].render(snip, True, (255,255,255))
-                    self.screen.blit(text_font, (SCREEN_WIDTH//8, 3*SCREEN_HEIGHT//4 + SCREEN_HEIGHT//8 - text_font.get_height()//2))
+                    self.screen.blit(text_font, (SCREEN_WIDTH//4, 3*SCREEN_HEIGHT//4 + SCREEN_HEIGHT//8 - text_font.get_height()//2))
 
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -660,6 +683,7 @@ class main_game:
                     if event.type == pygame.JOYBUTTONDOWN:
                         if event.button == 0:
                             self.text_list.pop(0)
+                            self.order_list.pop(0)
                             self.text_counter = 0
                             if not self.text_list:
                                 self.in_cutscene = False
@@ -687,6 +711,7 @@ class main_game:
     def first_phase_cutscene(self):
         self.in_cutscene = True
         self.text_list = ["原來是小惡魔啊，還以為是入侵者呢（呵欠","......zzz...zzz","竟然睡回去了......","算了，趕快進屋吧"]
+        self.order_list = [False,False,True,True]
 
     def run_main_menu(self):
         pygame.mixer.music.load("game_testing/data/sfx/Raise_the_Flag_of_Cheating.wav")
@@ -699,7 +724,8 @@ class main_game:
             #blit a half transparent background for the button
             button_bg = self.assets["button_background"].copy()
             button_bg.set_alpha(128)  # Set transparency level (0-255)
-            self.screen.blit(pygame.transform.scale(button_bg,(650,650)), (-30, 350))
+            self.screen.blit(pygame.transform.scale(button_bg,(650,600)), (-30, 350))
+            self.screen.blit(pygame.transform.scale(self.assets["title"],(450,450)),(65,-20))
             #blit the buttons
             if self.title_select[0]:
                 self.screen.blit(pygame.transform.scale(self.assets["title_start_selected"],(450,450)),(70,300))
@@ -709,6 +735,10 @@ class main_game:
                 self.screen.blit(pygame.transform.scale(self.assets["title_setting_selected"],(450,450)),(70,420))
             else:
                 self.screen.blit(pygame.transform.scale(self.assets["title_setting"],(450,450)),(70,420))
+            if self.title_select[1]:
+                self.screen.blit(pygame.transform.scale(self.assets["title_quit_selected"],(450,450)),(70,540))
+            else:
+                self.screen.blit(pygame.transform.scale(self.assets["title_quit"],(450,450)),(70,540))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -778,34 +808,39 @@ class main_game:
     def run_setting(self):
         self.setting_select = [[True,False],[False,False],[False,False],[False,False]]
         self.setting_index = [1,1]
+        decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        decrease_light.fill((0, 0, 0, 128))  # RGBA: (0, 0, 0, 128) for half transparency
+        self.screen.blit(decrease_light, (0, 0))
+
         self.temp_screen = self.screen.copy()
 
         while True:
             self.setting_select_cd = max(0,self.setting_select_cd-1)
             self.screen.blit(self.temp_screen, (0,0))
             #blit setting_bg in the middle of the screen
-            self.screen.blit(pygame.transform.scale(self.assets["setting_screen"], (2*SCREEN_WIDTH/3, 2*SCREEN_HEIGHT/3)),(SCREEN_WIDTH/6, SCREEN_HEIGHT/6))
+            #self.screen.blit(pygame.transform.scale(self.assets["setting_screen"], (2*SCREEN_WIDTH/3, 2*SCREEN_HEIGHT/3)),(SCREEN_WIDTH/6, SCREEN_HEIGHT/6))
+            self.screen.blit(pygame.transform.scale(self.assets["setting_screen"], (7*SCREEN_WIDTH/8, 12*SCREEN_HEIGHT/8)),(SCREEN_WIDTH/16-40, SCREEN_HEIGHT/16-300))
             
             
-            text_font = self.assets["font_setting"].render("BGM音量", True, (0,0,0))
+            text_font = self.assets["font_setting"].render("BGM音量", True, (255,255,255))
             self.screen.blit(text_font, (SCREEN_WIDTH/3-120, SCREEN_HEIGHT/6+100))
             self.screen.blit(pygame.transform.scale(self.assets["music"], (50,50)),(SCREEN_WIDTH/3+90, SCREEN_HEIGHT/6+105))
             text = str(self.bgm_factor)
-            text_font = self.assets["font_setting"].render(text, True, (0,0,0))
+            text_font = self.assets["font_setting"].render(text, True, (255,255,255))
             self.screen.blit(text_font, (SCREEN_WIDTH/3+335, SCREEN_HEIGHT/6+95))
 
-            text_font = self.assets["font_setting"].render("SFX音量", True, (0,0,0))
+            text_font = self.assets["font_setting"].render("SFX音量", True, (255,255,255))
             self.screen.blit(text_font, (SCREEN_WIDTH/3-120, SCREEN_HEIGHT/6+250))
             self.screen.blit(pygame.transform.scale(self.assets["music"], (50,50)),(SCREEN_WIDTH/3+90, SCREEN_HEIGHT/6+255))
             text = str(self.sfx_factor)
-            text_font = self.assets["font_setting"].render(text, True, (0,0,0))
+            text_font = self.assets["font_setting"].render(text, True, (255,255,255))
             self.screen.blit(text_font, (SCREEN_WIDTH/3+335, SCREEN_HEIGHT/6+250))
 
-            text_font = self.assets["font_setting"].render("畫面亮度", True, (0,0,0))
+            text_font = self.assets["font_setting"].render("畫面亮度", True, (255,255,255))
             self.screen.blit(text_font, (SCREEN_WIDTH/3-130, SCREEN_HEIGHT/6+400))
             self.screen.blit(pygame.transform.scale(self.assets["sun"], (50,50)),(SCREEN_WIDTH/3+95, SCREEN_HEIGHT/6+405))
             text = str(self.brightness)
-            text_font = self.assets["font_setting"].render(text, True, (0,0,0))
+            text_font = self.assets["font_setting"].render(text, True, (255,255,255))
             self.screen.blit(text_font, (SCREEN_WIDTH/3+335, SCREEN_HEIGHT/6+400))
 
             if self.setting_select[0][0]:
