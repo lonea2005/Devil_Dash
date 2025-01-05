@@ -38,6 +38,7 @@ class main_game:
         self.display = pygame.Surface((HALF_SCREEN_WIDTH, HALF_SCREEN_HEIGHT), pygame.SRCALPHA)
         self.display_for_outline = pygame.Surface((HALF_SCREEN_WIDTH, HALF_SCREEN_HEIGHT))
         self.display_pause = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT),pygame.SRCALPHA)
+        self.temp_screen = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT),pygame.SRCALPHA)
 
         self.clock = pygame.time.Clock()
         
@@ -46,12 +47,15 @@ class main_game:
         self.title_select = [False,False,False]
 
         self.assets = {
+            "font": pygame.font.Font("game_testing/data/font/LXGWWenKaiMonoTC-Bold.ttf", 36),
             "title_screen": load_trans_image("標題畫面.jpg"),
             "title_start": load_trans_image("buttons/start_button.png"),
             "title_start_selected": load_trans_image("buttons/chosen_start_button.png"),
             "title_setting": load_trans_image("buttons/setting_button.png"),
             "title_setting_selected": load_trans_image("buttons/chosen_setting_button.png"),
             "button_background": load_trans_image("buttons/bg.png"),
+            "text_box": load_image("text_box.png"),
+            "battle_start": load_trans_image("BattleStart.png"),
             "decor" : load_tile("tiles/decor"),
             "stone" : load_tile("tiles/stone"),
             "grass" : load_tile("tiles/grass"),
@@ -60,7 +64,7 @@ class main_game:
             "player": load_image("entities/player.png"),
             #"background": load_image("background.png"),
             "background": load_image("back.png"),
-            "enemy/idle" : Animation(load_trans_images("entities/enemy/idle"),duration=6,loop=True),
+            "enemy/idle" : Animation(load_trans_images("entities/enemy/idle"),duration=10,loop=True),
             "enemy/run" : Animation(load_trans_images("entities/enemy/run"),duration=4,loop=True),
             "enemy/jump" : Animation(load_trans_images("entities/enemy/jump"),duration=5,loop=True),
             "enemy/dash" : Animation(load_trans_images("entities/enemy/dash"),duration=4,loop=False),
@@ -75,7 +79,6 @@ class main_game:
             "particle/particle" : Animation(load_images("particles/particle"),duration=6,loop=False),
             "particle/slash" : Animation(load_trans_scaled_images("entities/slash",0.15),duration=4,loop=False),
             "particle/hp" : Animation(load_images("particles/hp"),duration=10,loop=False),
-            "gun" : load_image("gun.png"),
             "projectile" : load_image("projectile.png"),
             "projectile_1": load_image("projectile.png"),
             "projectile_2": load_image("projectile_orange.png"),
@@ -89,9 +92,13 @@ class main_game:
             "Boss_empty" : load_trans_image("empty_HP_bar.png"),
             "energy_max" : load_trans_image("max_SP_bar.png"),
             "energy_empty" : load_trans_image("empty_SP_bar.png"),
-            "retry" : load_image("buttons/retry_1.png"),  
-            "pressed_retry" : load_image("buttons/retry_2.png"),
+            "retry" : load_trans_image("buttons/retry_1.png"),  
+            "pressed_retry" : load_trans_image("buttons/retry_2.png"),
             "enemy_portrait_1" : load_trans_image("紅美鈴_大招立繪.png"),
+            "continue" : load_trans_image("buttons/continue_1.png"),
+            "pressed_continue" : load_trans_image("buttons/continue_2.png"),
+            "menu" : load_trans_image("buttons/menu_1.png"),
+            "pressed_menu" : load_trans_image("buttons/menu_2.png"),
 
         }
 
@@ -119,6 +126,7 @@ class main_game:
         self.pause = False
         self.pause_select = 0
         self.pause_select_cd = 0
+        self.battle_count_down = 0
         self.movements = [False,False]
 
         self.player = Player(self, (100,100), (8,15) , HP = 5)
@@ -136,7 +144,7 @@ class main_game:
         self.screen_shake_timer = 0
         self.screen_shake_offset = [0,0]
         self.dead = 0 #dead animation
-        self.in_cutscene = 0
+        self.in_cutscene = False
         self.cutscene_timer = 0
 
         self.tilemap.load("game_testing/"+str(self.level)+".pickle")
@@ -174,9 +182,14 @@ class main_game:
                 pygame.mixer.music.play(-1)
         if self.level == 0:
             if new_level:
+                self.in_cutscene = True
+                self.text_list = ["劇情1","劇情2","劇情3","劇情4"]
+                self.battle_count_down = 60
+                '''
                 pygame.mixer.music.load("game_testing/data/sfx/music_1.wav")
                 pygame.mixer.music.set_volume(0.2)
                 pygame.mixer.music.play(-1)
+                '''
 
             
         elif self.level == 1:
@@ -240,18 +253,20 @@ class main_game:
                 #make self.display_pause a transparent screen
                 self.pause_select_cd = max(0,self.pause_select_cd-1)
                 
-                self.display_pause.fill((0, 0, 0, 0))   
-                self.display_pause.blit(self.assets['retry'], (SCREEN_WIDTH//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16-18 - self.assets['retry'].get_height()//2))
-                self.display_pause.blit(self.assets['retry'], (SCREEN_WIDTH//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16 - self.assets['retry'].get_height()//2))
-                self.display_pause.blit(self.assets['retry'], (SCREEN_WIDTH//16 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//16+18 - self.assets['retry'].get_height()//2))
-                if self.pause_select == 0:
-                    self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_WIDTH//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16-18 - self.assets['pressed_retry'].get_height()//2))
-                elif self.pause_select == 1:
-                    self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_WIDTH//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16 - self.assets['pressed_retry'].get_height()//2))
-                elif self.pause_select == 2:
-                    self.display_pause.blit(self.assets['pressed_retry'], (SCREEN_WIDTH//16 - self.assets['pressed_retry'].get_width()//2, SCREEN_HEIGHT//16+18 - self.assets['pressed_retry'].get_height()//2))
+                self.screen.blit(self.temp_screen, (0,0))
 
-                self.screen.blit(pygame.transform.scale(self.display_pause, (8*SCREEN_WIDTH, 8*SCREEN_HEIGHT)), self.screen_shake_offset) 
+                self.screen.blit(self.assets['continue'], (SCREEN_WIDTH//2 - self.assets['continue'].get_width()//2, SCREEN_HEIGHT//2-150 - self.assets['continue'].get_height()//2))
+                self.screen.blit(self.assets['retry'], (SCREEN_WIDTH//2 - self.assets['retry'].get_width()//2, SCREEN_HEIGHT//2 - self.assets['retry'].get_height()//2))
+                self.screen.blit(self.assets['menu'], (SCREEN_WIDTH//2 - self.assets['menu'].get_width()//2, SCREEN_HEIGHT//2+150 - self.assets['menu'].get_height()//2))
+                if self.pause_select == 0:
+                    img = self.assets['pressed_continue']
+                    self.screen.blit(img, (SCREEN_WIDTH//2 - img.get_width()//2, SCREEN_HEIGHT//2-150 - img.get_height()//2))
+                elif self.pause_select == 1:
+                    img = self.assets['pressed_retry']
+                    self.screen.blit(img, (SCREEN_WIDTH//2 - img.get_width()//2, SCREEN_HEIGHT//2 - img.get_height()//2))
+                elif self.pause_select == 2:
+                    img = self.assets['pressed_menu']
+                    self.screen.blit(img, (SCREEN_WIDTH//2 - img.get_width()//2, SCREEN_HEIGHT//2+150 - img.get_height()//2))
                 pygame.display.update()
                 self.clock.tick(FPS)
 
@@ -289,7 +304,7 @@ class main_game:
 
             self.tilemap.render(self.display,offset=self.render_camera) #render background
 
-            if self.in_cutscene == 0 and self.cutscene_timer == 0:
+            if self.in_cutscene == False and self.cutscene_timer == 0:
                 #tutorial end
                 if self.player.position[0] > 1447 and self.level == -1 and self.win == 0:
                     self.win = 1
@@ -415,7 +430,7 @@ class main_game:
                 #outline stuff but I dont like it
                 #for offset in [[-1,0],[1,0],[0,1],[0,-1]]:
                 #    self.display_for_outline.blit(display_sillouette,offset)
-
+                
                 for particle in self.particles.copy():
                     kill = particle.update()
                     if particle.p_type == 'fire':
@@ -423,7 +438,7 @@ class main_game:
                     particle.render(self.display,offset=self.render_camera)
                     if kill:
                         self.particles.remove(particle)
-
+                
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.quit()
@@ -506,9 +521,7 @@ class main_game:
 
                 self.screen_shake_timer = max(0,self.screen_shake_timer-1)
                 self.screen_shake_offset = [random.randint(-self.screen_shake_timer,self.screen_shake_timer),random.randint(-self.screen_shake_timer,self.screen_shake_timer)]  
-             
-
-            #redering HP acording to player's HP
+            
             for i in range(self.player.HP):
                 self.display_for_outline.blit(self.assets['HP'],(i*18,15))
             #ranering energy acording to player's energy
@@ -544,7 +557,7 @@ class main_game:
             for enemy in self.enemy_spawners:
                 if enemy.type != "beam":
                     enemy.render_new(self.screen,offset=self.render_camera)
-
+            
             if self.cutscene_timer > 0:    
                 self.cutscene_timer -= 1
                 decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -569,7 +582,7 @@ class main_game:
                     self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(x,y))
                     #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(self.cutscene_timer*16+480-HALF_SCREEN_WIDTH,self.cutscene_timer*-48+960-HALF_SCREEN_HEIGHT))
                 if self.cutscene_timer == 0:
-                    self.in_cutscene = 0
+                    self.in_cutscene = False
 
             if self.transition:
                 tran_surf=pygame.Surface(self.display.get_size())
@@ -585,8 +598,43 @@ class main_game:
                 pause_screen.fill((0, 0, 0, 128))  # RGBA: (0, 0, 0, 128) for half transparency
                 self.screen.blit(pause_screen, (0, 0))
                 self.pause_select = 0
+                self.temp_screen = self.screen.copy()
                 pygame.mixer.music.set_volume(0.1)
 
+            if self.in_cutscene == True and not self.transition: 
+                #blit the text box at the buttom of the screen
+                self.screen.blit(pygame.transform.scale(self.assets["text_box"], (SCREEN_WIDTH, SCREEN_HEIGHT//4)),(0,3*SCREEN_HEIGHT//4))
+                #blit the text using font in the assets
+                if self.text_list:
+                    text = self.text_list[0]
+                    text_font = self.assets["font"].render(text, True, (255,255,255))
+                    self.screen.blit(text_font, (SCREEN_WIDTH//8, 3*SCREEN_HEIGHT//4 + SCREEN_HEIGHT//8 - text_font.get_height()//2))
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            self.text_list.pop(0)
+                            if not self.text_list:
+                                self.in_cutscene = False
+                                pygame.mixer.music.load("game_testing/data/sfx/music_1.wav")
+                                pygame.mixer.music.set_volume(0.2)
+                                pygame.mixer.music.play(-1)
+            if self.battle_count_down > 0 and not self.in_cutscene:
+                self.battle_count_down -= 1
+                #blit battle_start at the middle of the screen
+                #the img will first scale up and then shrink to its original size, and than fade out as the countdown goes down
+                if self.battle_count_down > 45:
+                    img = pygame.transform.scale(self.assets["battle_start"], (self.assets["battle_start"].get_width()*1.5*(self.battle_count_down)//45, self.assets["battle_start"].get_height()*1.5*(self.battle_count_down)//45))
+                    self.screen.blit(img, (HALF_SCREEN_WIDTH/2, HALF_SCREEN_HEIGHT/2-100))
+                elif self.battle_count_down > 0:
+                    img = pygame.transform.scale(self.assets["battle_start"], (self.assets["battle_start"].get_width()*1.5, self.assets["battle_start"].get_height()*1.5))
+                    img.set_alpha(255*(self.battle_count_down)/45)
+                    self.screen.blit(img, (HALF_SCREEN_WIDTH/2, HALF_SCREEN_HEIGHT/2-100))
+                else:
+                    self.battle_count_down = 0
             
             pygame.display.update()
             self.clock.tick(FPS)
@@ -628,6 +676,7 @@ class main_game:
                             pygame.mixer.music.set_volume(0.3*i/60)
                             self.clock.tick(60)
                             pygame.display.flip()
+                        self.level = 0
                         self.load_level()
                         self.run_game()
                         pygame.mixer.music.load("game_testing/data/sfx/Raise_the_Flag_of_Cheating.wav")

@@ -135,7 +135,7 @@ class physics_entity:
             surface.blit(pygame.transform.scale(pygame.transform.flip(self.anim.img(),not self.flip,False),(80,100)),(4*int(self.position[0]-offset[0]+self.anim_offset[0]),4*int(self.position[1]-offset[1]+self.anim_offset[1]+1))) #+1 for visually reg
             #surface.blit(pygame.transform.scale(pygame.transform.flip(self.anim.img(),not self.flip,False),(56,70)),(4*int(self.position[0]-offset[0]+self.anim_offset[0]),4*int(self.position[1]-offset[1]+self.anim_offset[1]+1))) #+1 for visually reg
         elif self.entity_type == "dummy":
-            surface.blit(pygame.transform.scale(pygame.transform.flip(self.anim.img(),not self.flip,False),(80,100)),(4*int(self.position[0]-offset[0]+self.anim_offset[0]),4*int(self.position[1]-offset[1]+self.anim_offset[1]+1)))
+            surface.blit(pygame.transform.scale(pygame.transform.flip(self.anim.img(),not self.flip,False),(120,150)),(4*int(self.position[0]-offset[0]+self.anim_offset[0]),4*int(self.position[1]-offset[1]+self.anim_offset[1]+1)))
 
 
 class Player(physics_entity):
@@ -195,7 +195,7 @@ class Player(physics_entity):
     
     def testing_stats(self):
         #testing stats goes here
-        #self.damage = 100
+        self.damage = 100
         #self.weapon = "貪欲的叉勺"
         #self.accessory = ["巫女的御幣"]
 
@@ -432,7 +432,7 @@ class Enemy(physics_entity):
 
         if self.phase == 1:
             self.HP = 35
-            self.action_queue = [300]
+            self.action_queue = [['empty',60],300]
             self.p1_shoot_count = 0
             #self.HP = 1
         elif self.phase == 2:
@@ -806,14 +806,14 @@ class Enemy(physics_entity):
     def ground_smash(self):
         for i in range(20):
             if self.flip:
-                self.main_game.sparks.append(Flame((self.rect().center[0]+random.randint(-6,6)-12,self.rect().center[1]-40), -1.5*math.pi, 3+random.random()))
+                self.main_game.sparks.append(Flame((self.rect().center[0]+random.randint(-6,6)-20,self.rect().center[1]-40), -1.5*math.pi, 3+random.random()))
                 #check if player is hit
                 if self.main_game.player.rect().colliderect(pygame.Rect(self.rect().center[0]-36,self.rect().center[1]-40,24,40)):
                     self.main_game.player.take_damage(1)
             else:
-                self.main_game.sparks.append(Flame((self.rect().center[0]+random.randint(-6,6)+12,self.rect().center[1]-40), -1.5*math.pi, 3+random.random()))
+                self.main_game.sparks.append(Flame((self.rect().center[0]+random.randint(-6,6)+20,self.rect().center[1]-40), -1.5*math.pi, 3+random.random()))
                 #check if player is hit
-                if self.main_game.player.rect().colliderect(pygame.Rect(self.rect().center[0]+12,self.rect().center[1]-40,24,40)):
+                if self.main_game.player.rect().colliderect(pygame.Rect(self.rect().center[0]+20,self.rect().center[1]-40,24,40)):
                     self.main_game.player.take_damage(1)
         
         
@@ -864,11 +864,6 @@ class Enemy(physics_entity):
 
     def render(self,surface,offset=[0,0]):
         super().render(surface,offset)
-        if self.flip:
-            surface.blit(pygame.transform.flip(self.main_game.assets['gun'],True,False),(self.rect().centerx-4-self.main_game.assets['gun'].get_width() - offset[0],self.rect().centery - offset[1]))
-        else:
-            surface.blit(self.main_game.assets['gun'],(self.rect().centerx + 4 - offset[0],self.rect().centery - offset[1]))
-
 
 
 
@@ -898,7 +893,7 @@ class Beam(physics_entity):
 class Dummy(physics_entity):
     def __init__(self,main_game,position,size,velocity=[0,0]):
         super().__init__(main_game,'dummy',position,size)
-        self.anim_offset = [-5,-9]
+        self.anim_offset = [-10,-21]
         self.HP = 30
         self.type = 'dummy'
         
