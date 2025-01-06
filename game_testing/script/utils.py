@@ -19,7 +19,7 @@ def load_trans_image(path):
 def load_white_image(path):
     img = pygame.image.load(BASE_IMAGE_PATH + path).convert_alpha()
     img.set_colorkey((255,255,255))
-    img=pygame.transform.flip(img, False, True)
+    img=pygame.transform.flip(img.copy(), True, False)
     return img
 
 def load_trans_scaled_images(path, scale):

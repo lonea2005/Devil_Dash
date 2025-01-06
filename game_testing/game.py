@@ -32,7 +32,7 @@ class main_game:
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()
 
-        pygame.display.set_caption("Devil Dash")
+        pygame.display.set_caption("Devil's Dash")
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT),pygame.SRCALPHA)
         #放大兩倍
         self.display = pygame.Surface((HALF_SCREEN_WIDTH, HALF_SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -70,6 +70,8 @@ class main_game:
             "text_box": load_image("text_box.png"),
             "head_1": load_trans_image("head/koakuma_head.png"),
             "head_2": load_trans_image("head/hong_head.png"),
+            "head_1_shadow": load_trans_image("head/koakuma_shadow.png"),
+            "head_2_shadow": load_trans_image("head/hong_shadow.png"),
             "music": load_trans_image("music.png"),
             "sun": load_trans_image("sun.png"),
             "battle_start": load_trans_image("BattleStart.png"),
@@ -107,11 +109,16 @@ class main_game:
             "projectile_6": load_image("projectile_blue.png"),
             "projectile_7": load_image("projectile_purple.png"),
             "HP" : load_trans_image("HP.png"),
-            "Boss_full" : load_trans_image("max_HP_bar.png"),
-            "Boss_empty" : load_trans_image("empty_HP_bar.png"),
-            #"Boss_empty" : load_trans_image("empty_HP.png"),
-            "energy_max" : load_trans_image("max_SP_bar.png"),
-            "energy_empty" : load_trans_image("empty_SP_bar.png"),
+            "star" : load_trans_image("star.png"),
+            #"Boss_full" : load_trans_image("max_HP_bar.png"),
+            "Boss_full" : load_trans_image("new_trans_full_blood.png"),
+            #"Boss_empty" : load_trans_image("empty_HP_bar.png"),
+            "Boss_empty" : load_trans_image("new_trans_empty_blood.png"),
+            "Boss_low" : load_trans_image("new_trans_low_warning.png"),
+            #"energy_max" : load_trans_image("max_SP_bar.png"),
+            "energy_max" : load_trans_image("new_trans_energy_hint.png"),
+            #"energy_empty" : load_trans_image("empty_SP_bar.png"),
+            "energy_empty" : load_trans_image("new_trans_empty_energy.png"),
             "retry" : load_trans_image("buttons/retry_unchoose.png"),  
             "pressed_retry" : load_trans_image("buttons/retry_choose.png"),
             "enemy_portrait_1" : load_trans_image("紅美鈴_大招立繪.png"),
@@ -197,7 +204,9 @@ class main_game:
             self.transition = -50
         elif self.level == -1:
             self.transition = -50
+
         self.win = 0
+        self.phase_3_start = False
 
         if self.level == -1:
             if new_level:
@@ -558,17 +567,24 @@ class main_game:
                 self.screen_shake_offset = [random.randint(-self.screen_shake_timer,self.screen_shake_timer),random.randint(-self.screen_shake_timer,self.screen_shake_timer)]  
             
             for i in range(self.player.HP):
-                self.display_for_outline.blit(self.assets['HP'],(i*18,15))
+                self.display_for_outline.blit(self.assets['HP'],(i*18,20))
             #ranering energy acording to player's energy
+            '''
             if self.player.charge < self.player.max_charge:
                 ratio = self.player.charge/self.player.max_charge
                 pygame.draw.rect(self.display_for_outline,(255,194,14),(7,37,70*ratio,4))
                 self.display_for_outline.blit(pygame.transform.scale(self.assets['energy_empty'],(70,12)),(4,33))
             else:
                 self.display_for_outline.blit(pygame.transform.scale(self.assets['energy_max'],(70,12)),(4,33))
+            '''
             #rendering boss HP, scale the horizontal to 58
+            '''
             for enemy in self.enemy_spawners:
                 if enemy.type == 'boss':
+                    for i in range(4-enemy.phase):
+                        img = self.assets['star']
+                        img = pygame.transform.scale(img,(img.get_width()*0.9,img.get_height()*0.9))
+                        self.display_for_outline.blit(img,(270-i*20,15))
                     if enemy.phase != 3 and enemy.HP < enemy.max_HP:
                         ratio = enemy.HP/enemy.max_HP
                         pygame.draw.rect(self.display_for_outline,(255,0,0),(233+55*(1-ratio),34,55*ratio,4))
@@ -580,7 +596,7 @@ class main_game:
                         self.display_for_outline.blit(pygame.transform.scale(self.assets['Boss_empty'],(58,12)),(230,30))
                     else:
                         self.display_for_outline.blit(pygame.transform.scale(self.assets['Boss_full'],(58,12)),(230,30))
-            
+            '''
                 
                       
             self.display_for_outline.blit(self.display, (0,0))
@@ -589,10 +605,47 @@ class main_game:
             #if not self.dead and abs(self.player.dashing) < 50:
             if not self.dead :
                 self.player.render_new(self.screen,offset=self.render_camera) #render player
+            if self.player.charge < self.player.max_charge:
+                ratio = self.player.charge/self.player.max_charge
+                pygame.draw.rect(self.screen,(0,137,255),(21,171,390*ratio,20))
+                img = pygame.transform.scale(self.assets['energy_empty'],(58*8,12*8))
+                self.screen.blit(pygame.transform.flip(img,False,True),(-20,130))
+            else:
+                img = pygame.transform.scale(self.assets['energy_max'],(58*8,12*8))
+                self.screen.blit(pygame.transform.flip(img,False,True),(-20,130))
             for enemy in self.enemy_spawners:
                 if enemy.type != "beam":
                     enemy.render_new(self.screen,offset=self.render_camera)
-            
+                 
+                if enemy.type == 'boss':
+                    for i in range(4-enemy.phase):
+                        img = self.assets['star']
+                        img = pygame.transform.scale(img,(img.get_width()*4,img.get_height()*4))
+                        self.screen.blit(img,(1150-i*80,90))
+                    if enemy.phase != 3 and enemy.HP < enemy.max_HP:
+                        ratio = enemy.HP/enemy.max_HP
+                        pygame.draw.rect(self.screen,(255,0,0),(847+376*(1-ratio),171,376*ratio,20))
+                        if ratio < 0.4:
+                            img = self.assets['Boss_low']
+                        else:
+                            img = self.assets['Boss_empty']
+                        img = pygame.transform.scale(img,(58*8,12*8))
+                        self.screen.blit(pygame.transform.flip(img,True,True),(800,130))
+                    elif enemy.phase == 3 and enemy.timer_HP < enemy.max_HP:
+                        ratio = enemy.timer_HP/enemy.max_HP
+                        #orange
+                        pygame.draw.rect(self.screen,(255,127,0),(847+376*(1-ratio),171,376*ratio,20))
+                        if ratio < 0.4:
+                            img = self.assets['Boss_low']
+                        else:
+                            img = self.assets['Boss_empty']
+                        img = pygame.transform.scale(img,(58*8,12*8))
+                        self.screen.blit(pygame.transform.flip(img,True,True),(800,130))
+                    else:
+                        img = self.assets['Boss_full']
+                        img = pygame.transform.scale(img,(58*8,12*8))
+                        self.screen.blit(pygame.transform.flip(img,True,True),(800,130))
+                
             if self.cutscene_timer > 0:    
                 self.cutscene_timer -= 1
                 decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -618,6 +671,7 @@ class main_game:
                     #self.screen.blit(pygame.transform.scale(self.assets["enemy_portrait_1"], (SCREEN_WIDTH, SCREEN_HEIGHT)),(self.cutscene_timer*16+480-HALF_SCREEN_WIDTH,self.cutscene_timer*-48+960-HALF_SCREEN_HEIGHT))
                 if self.cutscene_timer == 0:
                     self.in_cutscene = False
+                    self.phase_3_start = True
 
             if self.transition:
                 tran_surf=pygame.Surface(self.display.get_size())
@@ -644,17 +698,13 @@ class main_game:
                 if self.order_list[0]:
                     self.screen.blit(pygame.transform.scale(pygame.transform.flip(self.assets["head_1"],True,False),(self.assets["head_1"].get_width()*1.8,self.assets["head_1"].get_height()*1.8-3)),(10,3*SCREEN_HEIGHT//4+7))
                     img = self.assets["head_2"].copy()
-                    decrease_light = pygame.Surface((img.get_width(), img.get_height()), pygame.SRCALPHA)
-                    decrease_light.fill((0, 0, 0, 128))  # RGBA: (0, 0, 0, 128) for half transparency
-                    img.blit(decrease_light,(0,0))
+                    img.blit(self.assets["head_2_shadow"],(0,0))
                     self.screen.blit(pygame.transform.scale(img,(self.assets["head_2"].get_width()*1.8,self.assets["head_2"].get_height()*1.8-3)),(SCREEN_WIDTH-10-self.assets["head_2"].get_width()*1.8,3*SCREEN_HEIGHT//4+7))
 
                 else:
                     self.screen.blit(pygame.transform.scale(self.assets["head_2"],(self.assets["head_2"].get_width()*1.8,self.assets["head_2"].get_height()*1.8-3)),(SCREEN_WIDTH-10-self.assets["head_2"].get_width()*1.8,3*SCREEN_HEIGHT//4+7))
                     img= self.assets["head_1"].copy()
-                    decrease_light = pygame.Surface((img.get_width(), img.get_height()), pygame.SRCALPHA)
-                    decrease_light.fill((0, 0, 0, 128))  # RGBA: (0, 0, 0, 128) for half transparency
-                    img.blit(decrease_light,(0,0))
+                    img.blit(self.assets["head_1_shadow"],(0,0))
                     self.screen.blit(pygame.transform.scale(pygame.transform.flip(img,True,False),(self.assets["head_1"].get_width()*1.8,self.assets["head_1"].get_height()*1.8-3)),(10,3*SCREEN_HEIGHT//4+7))
                 #blit the text using font in the assets
                 if self.text_list:

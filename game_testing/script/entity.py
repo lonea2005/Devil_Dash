@@ -191,7 +191,7 @@ class Player(physics_entity):
         if "心型吊墜" in self.accessory:
             self.HP += 1
         if "亡靈提燈" in self.accessory:    
-            self.inv_time += 30
+            self.max_inv_time += 30
         #"蝙蝠吊墜" setting in enemy
         if "銀製匕首" in self.accessory:
             self.damage += 1
@@ -208,7 +208,7 @@ class Player(physics_entity):
         #self.damage = 100
         #self.weapon = "貪欲的叉勺"
         #self.accessory = ["巫女的御幣"]
-
+        self.accessory = ["亡靈提燈"]
         #self.weapon = "反則之書"
         #self.accessory = ["蝙蝠吊墜"]
         pass
@@ -592,7 +592,8 @@ class Enemy(physics_entity):
                     self.froze_in_air = False
                     self.action_queue=[60,"jump()",40,"frozen_in_air()",10,"air_8_shoot(1)",30,"air_8_shoot(2)",30,"air_8_shoot(1)",30,"prepare_attack()",["attack_preview()",30],5,["dash_to()",1]]
         elif self.phase == 3:
-            self.timer_HP -= 1
+            if self.main_game.phase_3_start:
+                self.timer_HP -= 1
             if self.timer_HP == 0:
                 self.HP = 0
             if not self.using_spell_card and not self.froze_in_air:
