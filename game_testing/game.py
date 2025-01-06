@@ -228,7 +228,7 @@ class main_game:
             
         elif self.level == 1:
             if new_level:
-                pygame.mixer.music.load("game_testing/data/sfx/music.wav")
+                pygame.mixer.music.load("game_testing/data/sfx/Locked_girl.wav")
                 pygame.mixer.music.set_volume(self.bgm_factor/5*0.4)
                 pygame.mixer.music.play(-1)
 
@@ -566,8 +566,9 @@ class main_game:
                 self.screen_shake_timer = max(0,self.screen_shake_timer-1)
                 self.screen_shake_offset = [random.randint(-self.screen_shake_timer,self.screen_shake_timer),random.randint(-self.screen_shake_timer,self.screen_shake_timer)]  
             
-            for i in range(self.player.HP):
-                self.display_for_outline.blit(self.assets['HP'],(i*18,20))
+            if not self.in_cutscene:
+                for i in range(self.player.HP):
+                    self.display_for_outline.blit(self.assets['HP'],(i*18,20))
             #ranering energy acording to player's energy
             '''
             if self.player.charge < self.player.max_charge:
@@ -605,46 +606,48 @@ class main_game:
             #if not self.dead and abs(self.player.dashing) < 50:
             if not self.dead :
                 self.player.render_new(self.screen,offset=self.render_camera) #render player
-            if self.player.charge < self.player.max_charge:
-                ratio = self.player.charge/self.player.max_charge
-                pygame.draw.rect(self.screen,(0,137,255),(21,171,390*ratio,20))
-                img = pygame.transform.scale(self.assets['energy_empty'],(58*8,12*8))
-                self.screen.blit(pygame.transform.flip(img,False,True),(-20,130))
-            else:
-                img = pygame.transform.scale(self.assets['energy_max'],(58*8,12*8))
-                self.screen.blit(pygame.transform.flip(img,False,True),(-20,130))
-            for enemy in self.enemy_spawners:
-                if enemy.type != "beam":
-                    enemy.render_new(self.screen,offset=self.render_camera)
-                 
-                if enemy.type == 'boss':
-                    for i in range(4-enemy.phase):
-                        img = self.assets['star']
-                        img = pygame.transform.scale(img,(img.get_width()*4,img.get_height()*4))
-                        self.screen.blit(img,(1150-i*80,90))
-                    if enemy.phase != 3 and enemy.HP < enemy.max_HP:
-                        ratio = enemy.HP/enemy.max_HP
-                        pygame.draw.rect(self.screen,(255,0,0),(847+376*(1-ratio),171,376*ratio,20))
-                        if ratio < 0.4:
-                            img = self.assets['Boss_low']
+
+            if not self.in_cutscene:
+                if self.player.charge < self.player.max_charge:
+                    ratio = self.player.charge/self.player.max_charge
+                    pygame.draw.rect(self.screen,(0,137,255),(21,171,390*ratio,20))
+                    img = pygame.transform.scale(self.assets['energy_empty'],(58*8,12*8))
+                    self.screen.blit(pygame.transform.flip(img,False,True),(-20,130))
+                else:
+                    img = pygame.transform.scale(self.assets['energy_max'],(58*8,12*8))
+                    self.screen.blit(pygame.transform.flip(img,False,True),(-20,130))
+                for enemy in self.enemy_spawners:
+                    if enemy.type != "beam":
+                        enemy.render_new(self.screen,offset=self.render_camera)
+                    
+                    if enemy.type == 'boss':
+                        for i in range(4-enemy.phase):
+                            img = self.assets['star']
+                            img = pygame.transform.scale(img,(img.get_width()*4,img.get_height()*4))
+                            self.screen.blit(img,(1150-i*80,90))
+                        if enemy.phase != 3 and enemy.HP < enemy.max_HP:
+                            ratio = enemy.HP/enemy.max_HP
+                            pygame.draw.rect(self.screen,(255,0,0),(847+376*(1-ratio),171,376*ratio,20))
+                            if ratio < 0.4:
+                                img = self.assets['Boss_low']
+                            else:
+                                img = self.assets['Boss_empty']
+                            img = pygame.transform.scale(img,(58*8,12*8))
+                            self.screen.blit(pygame.transform.flip(img,True,True),(800,130))
+                        elif enemy.phase == 3 and enemy.timer_HP < enemy.max_HP:
+                            ratio = enemy.timer_HP/enemy.max_HP
+                            #orange
+                            pygame.draw.rect(self.screen,(255,127,0),(847+376*(1-ratio),171,376*ratio,20))
+                            if ratio < 0.4:
+                                img = self.assets['Boss_low']
+                            else:
+                                img = self.assets['Boss_empty']
+                            img = pygame.transform.scale(img,(58*8,12*8))
+                            self.screen.blit(pygame.transform.flip(img,True,True),(800,130))
                         else:
-                            img = self.assets['Boss_empty']
-                        img = pygame.transform.scale(img,(58*8,12*8))
-                        self.screen.blit(pygame.transform.flip(img,True,True),(800,130))
-                    elif enemy.phase == 3 and enemy.timer_HP < enemy.max_HP:
-                        ratio = enemy.timer_HP/enemy.max_HP
-                        #orange
-                        pygame.draw.rect(self.screen,(255,127,0),(847+376*(1-ratio),171,376*ratio,20))
-                        if ratio < 0.4:
-                            img = self.assets['Boss_low']
-                        else:
-                            img = self.assets['Boss_empty']
-                        img = pygame.transform.scale(img,(58*8,12*8))
-                        self.screen.blit(pygame.transform.flip(img,True,True),(800,130))
-                    else:
-                        img = self.assets['Boss_full']
-                        img = pygame.transform.scale(img,(58*8,12*8))
-                        self.screen.blit(pygame.transform.flip(img,True,True),(800,130))
+                            img = self.assets['Boss_full']
+                            img = pygame.transform.scale(img,(58*8,12*8))
+                            self.screen.blit(pygame.transform.flip(img,True,True),(800,130))
                 
             if self.cutscene_timer > 0:    
                 self.cutscene_timer -= 1
