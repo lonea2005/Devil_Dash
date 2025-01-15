@@ -813,13 +813,14 @@ class main_game:
                         pygame.mixer.music.play(-1)
                 if event.type == pygame.JOYBUTTONDOWN:
                     if event.button == 0 and self.title_select[0]:  
-                        for i in range(60):
-                            decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-                            decrease_light.fill((0, 0, 0, 10))  # RGBA: (0, 0, 0, 128) for half transparency
+                        for i in range(100):
+                            decrease_light = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA).copy()
+                            decrease_light.fill((0, 0, 0, 5))  # RGBA: (0, 0, 0, 128) for half transparency
                             self.screen.blit(decrease_light, (0, 0))
                             pygame.mixer.music.set_volume(self.bgm_factor/5*0.3*(60-i)/60)
                             self.clock.tick(60)
-                            self.screen.blit(self.display_brightness, (0, 0))
+                            if not i:
+                                self.screen.blit(self.display_brightness, (0, 0))
                             pygame.display.flip()
                         self.load_level()
                         self.run_game()
